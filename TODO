@@ -1,0 +1,20 @@
+JOIN #channel | join a channel
+PART #channel | leave a channel
+PRIVMSG #dest msg | send a msg
+QUIT | disconnect user
+WHO | list user in channel
+
+-- OPERATOR --
+
+MODE option
+    - i | toggle invite-only channel
+    - t | toggle TOPIC operator
+    - k | remove password to channel
+    - k password | set password to channel
+    - o name | toggle operator on someone
+    - l | remove user limit
+    - l number | set user limit
+KICK | kick from channel
+INVITE | invite to channel
+TOPIC | view channel topic
+TOPIC msg | change channel topic
