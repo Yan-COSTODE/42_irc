@@ -1,6 +1,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <sys/socket.h>
 #include <string>
 #include "Channel.hpp"
 
@@ -12,11 +13,14 @@ class Client {
 		string ipAddress;
 		string nick;
 		string user;
-		bool connected;
+		bool authentified;
 
 	public:
+		bool operator==(const Client& _other) const;
+		string Nickname();
 		Client(int _fd, string _ipAddress);
 		int GetFd();
+		void Broadcast(string _msg);
 };
 
 #endif

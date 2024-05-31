@@ -111,7 +111,7 @@ void Server::ReceiveNewData(int _fd)
 	else
 	{
 		_buffer[_bytes] = '\0';
-		Command::Parse(_buffer, NULL, this);
+		Command::Parse(_buffer, GetClient(_fd), this);
 	}
 }
 
@@ -149,6 +149,33 @@ void Server::ClearClients(int _fd)
 			break;
 		}
 	}
+}
+
+Client* Server::GetClient(int _fd)
+{
+	for(size_t i = 0; i < clients.size(); i++)
+	{
+		if (clients[i].GetFd() == _fd)
+			return &clients[i];
+	}
+
+	return NULL;
+}
+
+Channel* Server::AddChannel(std::string _name)
+{
+	if (channels.find(_name) != channels.end())
+		return &channels[_name];
+
+	Channel _channel(_name);
+	channels.insert(make_pair(_name, _channel));
+	return &channels[_name];
+}
+
+void Server::RemoveChannel(std::string _name)
+{
+	if (channels.find(_name) != channels.end())
+		channels.erase(_name);
 }
 
 void Server::SignalHandler(int _signum)

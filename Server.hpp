@@ -26,6 +26,9 @@ class Server {
 		vector<struct pollfd> fds;
 		map<string, Channel> channels;
 
+	private:
+		Client* GetClient(int _fd);
+
 	public:
 		Server(int _port);
 		void ServerInit();
@@ -34,6 +37,8 @@ class Server {
 		void ReceiveNewData(int _fd);
 		void CloseFds();
 		void ClearClients(int _fd);
+		Channel* AddChannel(string _name);
+		void RemoveChannel(string _name);
 
 		static void SignalHandler(int _signum);
 };
