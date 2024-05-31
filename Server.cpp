@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Command.hpp"
 
 bool Server::Signal = false;
 
@@ -110,7 +111,7 @@ void Server::ReceiveNewData(int _fd)
 	else
 	{
 		_buffer[_bytes] = '\0';
-		cout << "\x1b[1;37mClient <" << _fd << "> Data: " << _buffer << "\x1b[0m" << endl;
+		Command::Parse(_buffer, NULL, this);
 	}
 }
 

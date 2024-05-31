@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -23,6 +24,7 @@ class Server {
 		static bool Signal;
 		vector<Client> clients;
 		vector<struct pollfd> fds;
+		map<string, Channel> channels;
 
 	public:
 		Server(int _port);

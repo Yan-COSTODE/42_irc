@@ -1,3 +1,9 @@
+-- CONNECTIONS --
+
+NICK nickname
+USER username
+PASS password
+
 -- BASICS --
 
 JOIN #channel | join a channel

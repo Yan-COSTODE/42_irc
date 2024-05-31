@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	unsigned short _port = atoi(argv[1]);
+	int _port = atoi(argv[1]);
 
 	if (_port < 1024 || _port > USHRT_MAX)
 	{
