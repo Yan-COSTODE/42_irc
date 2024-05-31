@@ -11,7 +11,7 @@ Channel::Channel()
 	userLimit = -1;
 }
 
-Channel::Channel(std::string _name)
+Channel::Channel(string _name)
 {
 	name = _name;
 	inviteOnly = false;
@@ -28,8 +28,27 @@ bool Channel::CheckAdmin(Client _client)
 	return true;
 }
 
+bool Channel::CheckUser(Client _client)
+{
+	if (find(admin.begin(), admin.end(), _client) == admin.end())
+		return false;
+	return true;
+}
+
+void Channel::RemoveFrom(vector<Client>* _vector, Client _client)
+{
+	_vector->erase(remove(_vector->begin(), _vector->end(), _client), _vector->end());
+}
+
 void Channel::JoinChannel(Client _client)
 {
+	if (CheckUser(_client))
+	{
+		string _msg = "\x1b[1;31mYou already have joined " + name + "\x1b[0m\n";
+		_client.Broadcast(_msg);
+		return;
+	}
+
 	if (userLimit == -1 && user.size() == (size_t)userLimit)
 		return;
 
@@ -38,9 +57,28 @@ void Channel::JoinChannel(Client _client)
 	if (admin.size() == 0)
 		admin.push_back(_client);
 
-	string _msg = "\x1b[1;37mYou have joined ";
-	_msg += name;
-	_msg += "\x1b[0m\n";
+	string _msg = "\x1b[1;32mYou have joined " + name + "\x1b[0m\n";
+	_client.Broadcast(_msg);
+}
+
+int Channel::Users()
+{
+	return user.size();
+}
+
+void Channel::QuitChannel(Client _client)
+{
+	if (!CheckUser(_client))
+	{
+		string _msg = "\x1b[1;31mYou are not in " + name + "\x1b[0m\n";
+		_client.Broadcast(_msg);
+		return;
+	}
+
+	RemoveFrom(&user, _client);
+	RemoveFrom(&admin, _client);
+
+	string _msg = "\x1b[1;32mYou quit " + name + "\x1b[0m\n";
 	_client.Broadcast(_msg);
 }
 
@@ -60,35 +98,53 @@ void Channel::ToggleAdmin(Client _admin, Client _client)
 
 	if (CheckAdmin(_client))
 	{
-		for(size_t i = 0; i < admin.size(); i++)
-		{
-			if (admin[i].Nickname() == _client.Nickname())
-			{
-				admin.erase(admin.begin() + i);
-				break;
-			}
-		}
+		RemoveFrom(&admin, _client);
 		_admin.Broadcast("\x1b[1;31mYou aren't allowed to do that\n\x1b[0m");
 		return;
 	}
 	else
 	{
 		admin.push_back(_client);
-		string _msg = "\x1b[1;37mYou made ";
-		_msg += _client.Nickname();
-		_msg += "an operator\x1b[0m\n";
+		string _msg = "\x1b[1;32mYou made " + _client.Nickname() + "an operator\x1b[0m\n";
 		_admin.Broadcast(_msg);
-		_msg = "\x1b[1;37m";
-		_msg += _admin.Nickname();
-		_msg += "made you an operator\x1b[0m\n";
+		_msg = "\x1b[1;32m" + _admin.Nickname() + "made you an operator\x1b[0m\n";
 		_client.Broadcast(_msg);
 		return;
 	}
 	(void)_client;
 }
 
-void Channel::Broadcast(std::string _msg)
+void Channel::Broadcast(string _msg)
 {
 	for(size_t i = 0; i < user.size(); i++)
 		user[i].Broadcast(_msg);
+}
+
+string Channel::Who()
+{
+	string _msg = "\x1b[1;37m--- " + name + " ---\n";
+
+	for(size_t i = 0; i < user.size(); i++)
+	{
+		Client _client = user[i];
+
+		if (CheckAdmin(_client))
+		{
+			_msg += _client.Nickname();
+			_msg += ": operator\n";
+		}
+		else
+		{
+			_msg += _client.Nickname();
+			_msg += "\n";
+		}
+	}
+
+	_msg += "\x1b[0m";
+	return _msg;
+}
+
+string Channel::Name()
+{
+	return name;
 }

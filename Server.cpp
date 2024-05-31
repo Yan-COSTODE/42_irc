@@ -162,20 +162,32 @@ Client* Server::GetClient(int _fd)
 	return NULL;
 }
 
-Channel* Server::AddChannel(std::string _name)
+Channel *Server::GetChannel(string _name)
+{
+	if (channels.find(_name) != channels.end())
+		return &channels[_name];
+
+	return NULL;
+}
+
+Channel* Server::AddChannel(string _name)
 {
 	if (channels.find(_name) != channels.end())
 		return &channels[_name];
 
 	Channel _channel(_name);
+	cout << "\x1b[1;32mChannel " << _name << " succesfully created\x1b[0m" << endl;
 	channels.insert(make_pair(_name, _channel));
 	return &channels[_name];
 }
 
-void Server::RemoveChannel(std::string _name)
+void Server::RemoveChannel(string _name)
 {
 	if (channels.find(_name) != channels.end())
+	{
+		cout << "\x1b[1;32mChannel " << _name << " succesfully erased\x1b[0m" << endl;
 		channels.erase(_name);
+	}
 }
 
 void Server::SignalHandler(int _signum)

@@ -6,11 +6,11 @@ PASS password
 
 -- BASICS --
 
-JOIN #channel | join a channel
-PART #channel | leave a channel
+        JOIN #channel | join a channel
+        PART #channel | leave a channel
 PRIVMSG #dest msg | send a msg
 QUIT | disconnect user
-WHO | list user in channel
+        WHO | list user in channel
 
 -- OPERATOR --
 

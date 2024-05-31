@@ -37,6 +37,7 @@ class Server {
 		void ReceiveNewData(int _fd);
 		void CloseFds();
 		void ClearClients(int _fd);
+		Channel* GetChannel(string _name);
 		Channel* AddChannel(string _name);
 		void RemoveChannel(string _name);
 

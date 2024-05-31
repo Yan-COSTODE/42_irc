@@ -22,13 +22,19 @@ class Channel {
 
 	private:
 		bool CheckAdmin(Client _client);
+		bool CheckUser(Client _client);
+		void RemoveFrom(vector<Client>* _vector, Client _client);
 
-	public:
+public:
 		Channel();
 		Channel(string _name);
 		void JoinChannel(Client _client);
+		void QuitChannel(Client _client);
 		void ToggleAdmin(Client _admin, Client _client);
 		void Broadcast(string _msg);
+		string Name();
+		string Who();
+		int Users();
 };
 
 #endif

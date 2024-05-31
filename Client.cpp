@@ -14,12 +14,10 @@ int Client::GetFd()
 	return fd;
 }
 
-void Client::Broadcast(std::string _msg)
+void Client::Broadcast(string _msg)
 {
 	send(fd, _msg.c_str(), _msg.size(), 0);
 }
-
-
 
 string Client::Nickname()
 {
