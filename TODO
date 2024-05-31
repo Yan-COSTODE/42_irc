@@ -1,3 +1,5 @@
+-- BASICS --
+
 JOIN #channel | join a channel
 PART #channel | leave a channel
 PRIVMSG #dest msg | send a msg

@@ -8,17 +8,11 @@ using namespace std;
 class Client {
 	private:
 		int fd;
-		int port;
-		string hostname;
-
-	private:
-
+		string ipAddress;
 
 	public:
-		~Client();
-		Client(int _fd, int _port, const string &_hostname);
-		int GetPort();
-		string GetHostname();
+		Client(int _fd, string _ipAddress);
+		int GetFd();
 };
 
 #endif

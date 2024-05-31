@@ -1,20 +1,12 @@
 #include "Client.hpp"
 
-Client::Client(int _fd, int _port, const string &_hostname)
+Client::Client(int _fd, string _ipAddress)
 {
 	fd = _fd;
-	port = _port;
-	hostname = _hostname;
+	ipAddress = _ipAddress;
 }
 
-Client::~Client()
+int Client::GetFd()
 {
-}
-
-int Client::GetPort() {
-	return port;
-}
-
-string Client::GetHostname() {
-	return hostname;
+	return fd;
 }

@@ -1,15 +1,36 @@
 #include <climits>
+#include <cstdlib>
 #include "Server.hpp"
 
 int main(int argc, char **argv)
 {
 	if (argc != 3)
-		Server::ThrowError("Error: Wrong Number of Arguments");
+	{
+		cerr << "\x1b[1;31merror: wrong number of arguments\x1b[0m" << endl;
+		return EXIT_FAILURE;
+	}
 
-	unsigned short _port = std::atoi(argv[1]);
+	unsigned short _port = atoi(argv[1]);
 
 	if (_port < 1024 || _port > USHRT_MAX)
-		Server::ThrowError("Error: Wrong Port");
+	{
+		cerr << "\x1b[1;31merror: wrong port\x1b[0m" << endl;
+		return EXIT_FAILURE;
+	}
 
-	Server _server(_port, argv[2]);
+	Server _server(_port);
+
+	try
+	{
+		signal(SIGINT, Server::SignalHandler);
+		signal(SIGQUIT, Server::SignalHandler);
+		_server.ServerInit();
+	}
+	catch (const exception& e)
+	{
+			_server.CloseFds();
+			cerr << "\x1b[1;31m" << e.what() << "\x1b[0m" << endl;
+	}
+
+	return EXIT_SUCCESS;
 }

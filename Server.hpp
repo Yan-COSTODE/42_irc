@@ -2,44 +2,38 @@
 #define SERVER_HPP
 
 #include <iostream>
-#include <csignal>
-#include <cstdlib>
-#include <sys/socket.h>
-#include <sys/poll.h>
-#include <netinet/in.h>
 #include <vector>
-#include <map>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <poll.h>
+#include <csignal>
 #include <cstring>
-#include <cerrno>
-#include <netdb.h>
-#include <cstdio>
 #include "Client.hpp"
-
-#define BUFFER_SIZE 100
 
 using namespace std;
 
 class Server {
 	private:
-		unsigned short port;
-		string password;
+		int port;
 		int serverSocket;
-		bool status;
-		vector<pollfd> pollFds;
-		//vector<Channel*> channels;
-		map<int, Client*> clients;
-
-	private:
-		void Start();
-		void ConnectClient();
-		void DisconnectClient(int _fd);
-		void MessageClient(int _fd);
-		string ReadMessage(int _fd);
+		static bool Signal;
+		vector<Client> clients;
+		vector<struct pollfd> fds;
 
 	public:
-		~Server();
-		Server(unsigned short _port, const string& _password);
-		static void ThrowError(const string& msg);
+		Server(int _port);
+		void ServerInit();
+		void ServerSocket();
+		void AcceptNewClient();
+		void ReceiveNewData(int _fd);
+		void CloseFds();
+		void ClearClients(int _fd);
+
+		static void SignalHandler(int _signum);
 };
 
 #endif
