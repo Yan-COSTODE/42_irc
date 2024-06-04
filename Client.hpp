@@ -17,9 +17,13 @@ class Client {
 
 	public:
 		bool operator==(const Client& _other) const;
-		string Nickname();
+		string GetNick();
 		Client(int _fd, string _ipAddress);
 		int GetFd();
+		string GetUser();
+		void Authentify();
+		void SetUser(string _user);
+		void SetNick(string _nick);
 		void Broadcast(string _msg);
 };
 

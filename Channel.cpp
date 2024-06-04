@@ -42,15 +42,21 @@ void Channel::RemoveFrom(vector<Client>* _vector, Client _client)
 
 void Channel::JoinChannel(Client _client)
 {
+	if (inviteOnly && find(invited.begin(), invited.end(), _client) == invited.end())
+	{
+		string _msg = "\x1b[1;31mYou have not been invited to " + name + "\x1b[0m\n";
+		_client.Broadcast(_msg);
+		return ;
+	}
 	if (CheckUser(_client))
 	{
 		string _msg = "\x1b[1;31mYou already have joined " + name + "\x1b[0m\n";
 		_client.Broadcast(_msg);
-		return;
+		return ;
 	}
 
 	if (userLimit == -1 && user.size() == (size_t)userLimit)
-		return;
+		return ;
 
 	user.push_back(_client);
 
@@ -60,6 +66,12 @@ void Channel::JoinChannel(Client _client)
 	string _msg = "\x1b[1;32mYou have joined " + name + "\x1b[0m\n";
 	_client.Broadcast(_msg);
 }
+
+void Channel::AddInvited(Client _client)
+{
+	invited.push_back(_client);
+}
+
 
 int Channel::Users()
 {
@@ -105,9 +117,9 @@ void Channel::ToggleAdmin(Client _admin, Client _client)
 	else
 	{
 		admin.push_back(_client);
-		string _msg = "\x1b[1;32mYou made " + _client.Nickname() + "an operator\x1b[0m\n";
+		string _msg = "\x1b[1;32mYou made " + _client.GetNick() + "an operator\x1b[0m\n";
 		_admin.Broadcast(_msg);
-		_msg = "\x1b[1;32m" + _admin.Nickname() + "made you an operator\x1b[0m\n";
+		_msg = "\x1b[1;32m" + _admin.GetNick() + "made you an operator\x1b[0m\n";
 		_client.Broadcast(_msg);
 		return;
 	}
@@ -130,12 +142,12 @@ string Channel::Who()
 
 		if (CheckAdmin(_client))
 		{
-			_msg += _client.Nickname();
+			_msg += _client.GetNick();
 			_msg += ": operator\n";
 		}
 		else
 		{
-			_msg += _client.Nickname();
+			_msg += _client.GetNick();
 			_msg += "\n";
 		}
 	}

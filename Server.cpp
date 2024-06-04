@@ -3,9 +3,10 @@
 
 bool Server::Signal = false;
 
-Server::Server(int _port)
+Server::Server(int _port, string passwd)
 {
 	port = _port;
+	password = passwd;
 	serverSocket = -1;
 }
 
@@ -151,6 +152,11 @@ void Server::ClearClients(int _fd)
 	}
 }
 
+string Server::GetPass()
+{
+	return password;
+}
+
 Client* Server::GetClient(int _fd)
 {
 	for(size_t i = 0; i < clients.size(); i++)
@@ -158,7 +164,6 @@ Client* Server::GetClient(int _fd)
 		if (clients[i].GetFd() == _fd)
 			return &clients[i];
 	}
-
 	return NULL;
 }
 
@@ -166,7 +171,6 @@ Channel *Server::GetChannel(string _name)
 {
 	if (channels.find(_name) != channels.end())
 		return &channels[_name];
-
 	return NULL;
 }
 
@@ -189,6 +193,18 @@ void Server::RemoveChannel(string _name)
 		channels.erase(_name);
 	}
 }
+
+bool Server::IsNameAvailable(string _name)
+{
+	for (int i = 0; i < (int)clients.size(); i++)
+	{
+		if (_name == clients[i].GetNick())
+			return false;
+	}
+	return true;
+}
+
+
 
 void Server::SignalHandler(int _signum)
 {

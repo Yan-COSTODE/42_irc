@@ -4,6 +4,8 @@
 
 #include "Server.hpp"
 
+class Channel;
+
 class Command {
 	public:
 		static void Parse(string _data, Client* _client, Server* _server);
@@ -11,6 +13,7 @@ class Command {
 		static void Who(string _data, Client* _client, Server* _server);
 		static void Join(string _data, Client* _client, Server* _server);
 		static void Part(string _data, Client* _client, Server* _server);
+		static void Invite(string _data, Client *_client, Server *_server);
 		static string ExtractCommand(string _data);
 		static string ExtractArgs(string _data);
 };

@@ -2,12 +2,57 @@
 
 void Command::Parse(string _data, Client* _client, Server* _server)
 {
-	if (!_client)
-		return;
-
-	cout << "\x1b[1;37mClient <" << _client->Nickname() << "> Data: " << _data << "\x1b[0m" << flush;
-
 	string _cmd = ExtractCommand(_data);
+	string _msg = "";
+
+	if (_cmd == "PASS")
+	{
+		string data = ExtractArgs(_data);
+		if (data == _server->GetPass())
+			_client->Authentify();
+		else
+		{
+			_msg = "Password does not match\n";
+			_client->Broadcast(_msg);
+		}
+		return ;
+	}
+	if (_cmd == "USER")
+	{
+		if (_cmd.empty())
+		{
+			_msg = "Username cannot be left blank\n";
+			_client->Broadcast(_msg);
+		}
+		else
+			_client->SetUser(_cmd);
+		return ;
+	}
+	if (_cmd == "NICK")
+	{
+		if (_cmd.empty())
+		{
+			_msg = "Nickname cannot be left blank\n";
+			_client->Broadcast(_msg);
+		}
+		else if (!_server->IsNameAvailable(_cmd))
+		{
+			_msg = "This nickname has already been picked\n";
+			_client->Broadcast(_msg);
+			return ;
+		}
+		else
+			_client->SetNick(_cmd);
+		return ;
+	}
+
+	else if (_client->GetNick().empty() || _client->GetUser().empty())
+	{
+		_msg = "\x1b[1;31mYou need to authentify yourself before executing any command\n\x1b[0m";
+		_client->Broadcast(_msg);
+	}
+
+	cout << "\x1b[1;37mClient <" << _client->GetNick() << "> Data: " << _data << "\x1b[0m" << flush;
 
 	if (_cmd == "WHO")
 		Who(ExtractArgs(_data), _client, _server);
@@ -15,9 +60,28 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		Join(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "PART")
 		Part(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "INVITE")
+		Invite(ExtractArgs(_data), _client, _server);
 	else
 		NotFound(_cmd, _client);
 }
+
+void Command::Invite(string _data, Client *_client, Server *_server)
+{
+	Channel *channel = _server->GetChannel(&_data[1]);
+	if (!channel->CheckAdmin(*_client))
+	{
+		_client->Broadcast("\x1b[1;31mYou aren't allowed to do that\n\x1b[0m");
+		return ;
+	}
+	if (channel->CheckUser(*_client))
+	{
+		_client->Broadcast("\x1b[1;31mThis user is already in the channel\n\x1b[0m");
+		return ;
+	}
+	channel->AddInvited(*_client);
+}
+
 
 void Command::NotFound(string _data, Client *_client)
 {
@@ -30,7 +94,7 @@ void Command::Join(string _data, Client *_client, Server *_server)
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
 		_client->Broadcast("\x1b[1;31mJOIN need a channel in argument\n\x1b[0m");
-		return;
+		return ;
 	}
 
 	Channel *_channel = _server->AddChannel(&_data[1]);
@@ -49,7 +113,7 @@ void Command::Part(string _data, Client *_client, Server *_server)
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
 		_client->Broadcast("\x1b[1;31mPART need a channel in argument\n\x1b[0m");
-		return;
+		return ;
 	}
 
 	Channel *_channel = _server->GetChannel(&_data[1]);
@@ -69,7 +133,6 @@ void Command::Part(string _data, Client *_client, Server *_server)
 
 void Command::Who(string _data, Client* _client, Server *_server)
 {
-
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
 		_client->Broadcast("\x1b[1;31mWHO need a channel in argument\n\x1b[0m");

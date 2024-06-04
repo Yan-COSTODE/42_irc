@@ -10,7 +10,7 @@ using namespace std;
 class Client;
 
 class Channel {
-	private:
+	protected:
 		string name;
 		bool inviteOnly;
 		bool topicAdmin;
@@ -19,13 +19,12 @@ class Channel {
 		int userLimit;
 		vector<Client> admin;
 		vector<Client> user;
+		vector<Client> invited;
 
 	private:
-		bool CheckAdmin(Client _client);
-		bool CheckUser(Client _client);
-		void RemoveFrom(vector<Client>* _vector, Client _client);
+			void RemoveFrom(vector<Client>* _vector, Client _client);
 
-public:
+	public:
 		Channel();
 		Channel(string _name);
 		void JoinChannel(Client _client);
@@ -35,6 +34,10 @@ public:
 		string Name();
 		string Who();
 		int Users();
+
+		bool CheckAdmin(Client _client);
+		bool CheckUser(Client _client);
+		void AddInvited(Client _client);
 };
 
 #endif
