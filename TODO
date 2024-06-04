@@ -9,7 +9,7 @@ PASS password
         JOIN #channel | join a channel
         PART #channel | leave a channel
 PRIVMSG #dest msg | send a msg
-QUIT | disconnect user
+        QUIT | disconnect user
         WHO | list user in channel
 
 -- OPERATOR --

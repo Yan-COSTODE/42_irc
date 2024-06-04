@@ -30,7 +30,7 @@ bool Channel::CheckAdmin(Client _client)
 
 bool Channel::CheckUser(Client _client)
 {
-	if (find(admin.begin(), admin.end(), _client) == admin.end())
+	if (find(user.begin(), user.end(), _client) == user.end())
 		return false;
 	return true;
 }
@@ -144,7 +144,21 @@ string Channel::Who()
 	return _msg;
 }
 
-string Channel::Name()
+string Channel::Name() const
 {
 	return name;
+}
+
+bool Channel::IsIn(Client _client)
+{
+	return CheckUser(_client);
+}
+
+ostream& operator<<(ostream& _os, const Channel& _channel)
+{
+	string _output = "Channel <";
+	_output += _channel.Name();
+	_output += ">";
+	_os << _output;
+	return _os;
 }

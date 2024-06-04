@@ -93,7 +93,7 @@ void Server::AcceptNewClient()
 	Client _client(_clientFd, inet_ntoa(_address.sin_addr));
 	clients.push_back(_client);
 	fds.push_back(_poll);
-	cout << "\x1b[1;32mClient <" << _clientFd << "> Connected\x1b[0m" << endl;
+	cout << "\x1b[1;32m" << _client << " Connected\x1b[0m" << endl;
 }
 
 void Server::ReceiveNewData(int _fd)
@@ -119,7 +119,9 @@ void Server::CloseFds()
 {
 	for(size_t i = 0; i < clients.size(); i++)
 	{
-		cout << "\x1b[1;31mClient <" << clients[i].GetFd() << "> Disconnected\x1b[0m" << endl;
+		cout << "\x1b[1;31m" << clients[i] << " Disconnected\x1b[0m" << endl;
+		string _msg = "\x1b[1;31mYou have been disconnected from the server\n\x1b[0m";
+		clients[i].Broadcast(_msg);
 		close(clients[i].GetFd());
 	}
 
@@ -128,6 +130,15 @@ void Server::CloseFds()
 		cout <<"\x1b[1;31mServer <" << serverSocket << "> Disconnected\x1b[0m" << endl;
 		close(serverSocket);
 	}
+}
+
+void Server::RemoveClient(Client _client)
+{
+	cout << "\x1b[1;31m" << _client << " Disconnected\x1b[0m" << endl;
+	string _msg = "\x1b[1;31mYou have been disconnected from the server\n\x1b[0m";
+	_client.Broadcast(_msg);
+	ClearClients(_client.GetFd());
+	close(_client.GetFd());
 }
 
 void Server::ClearClients(int _fd)
@@ -162,6 +173,17 @@ Client* Server::GetClient(int _fd)
 	return NULL;
 }
 
+Client* Server::GetClient(string _name)
+{
+	for(size_t i = 0; i < clients.size(); i++)
+	{
+		if (clients[i].Nickname() == _name)
+			return &clients[i];
+	}
+
+	return NULL;
+}
+
 Channel *Server::GetChannel(string _name)
 {
 	if (channels.find(_name) != channels.end())
@@ -176,7 +198,7 @@ Channel* Server::AddChannel(string _name)
 		return &channels[_name];
 
 	Channel _channel(_name);
-	cout << "\x1b[1;32mChannel " << _name << " succesfully created\x1b[0m" << endl;
+	cout << "\x1b[1;32m" << _channel << " Created\x1b[0m" << endl;
 	channels.insert(make_pair(_name, _channel));
 	return &channels[_name];
 }
@@ -185,7 +207,7 @@ void Server::RemoveChannel(string _name)
 {
 	if (channels.find(_name) != channels.end())
 	{
-		cout << "\x1b[1;32mChannel " << _name << " succesfully erased\x1b[0m" << endl;
+		cout << "\x1b[1;32m" << channels[_name] << " Erased\x1b[0m" << endl;
 		channels.erase(_name);
 	}
 }

@@ -11,8 +11,11 @@ class Command {
 		static void Who(string _data, Client* _client, Server* _server);
 		static void Join(string _data, Client* _client, Server* _server);
 		static void Part(string _data, Client* _client, Server* _server);
+		static void Quit(string _data, Client* _client, Server* _server);
+		static void Msg(string _data, Client* _client, Server* _server);
 		static string ExtractCommand(string _data);
 		static string ExtractArgs(string _data);
+		static string ExtractMsg(string _data);
 };
 
 #endif

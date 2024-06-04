@@ -3,6 +3,7 @@
 
 #include <sys/socket.h>
 #include <string>
+#include <sstream>
 #include "Channel.hpp"
 
 using namespace std;
@@ -16,11 +17,13 @@ class Client {
 		bool authentified;
 
 	public:
-		bool operator==(const Client& _other) const;
-		string Nickname();
 		Client(int _fd, string _ipAddress);
-		int GetFd();
+		bool operator==(const Client& _other) const;
+		string Nickname() const;
+		int GetFd() const;
 		void Broadcast(string _msg);
 };
+
+ostream& operator<<(ostream& _os, const Client& _client);
 
 #endif

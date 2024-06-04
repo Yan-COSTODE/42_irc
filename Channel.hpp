@@ -25,16 +25,19 @@ class Channel {
 		bool CheckUser(Client _client);
 		void RemoveFrom(vector<Client>* _vector, Client _client);
 
-public:
+	public:
 		Channel();
 		Channel(string _name);
 		void JoinChannel(Client _client);
 		void QuitChannel(Client _client);
 		void ToggleAdmin(Client _admin, Client _client);
 		void Broadcast(string _msg);
-		string Name();
+		bool IsIn(Client _client);
+		string Name() const;
 		string Who();
 		int Users();
 };
+
+ostream& operator<<(ostream& _os, const Channel& _channel);
 
 #endif
