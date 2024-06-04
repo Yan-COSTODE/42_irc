@@ -18,7 +18,7 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		User(ExtractArgs(_data), _client);
 	else if (_client->GetNick().empty() || _client->GetUser().empty())
 	{
-		_msg = "\x1b[1;31mYou need to authentify yourself before executing any command\n\x1b[0m";
+		_msg = "\x1b[1;31mYou needs to authentify yourself before executing any command\n\x1b[0m";
 		_client->Broadcast(_msg);
 	}
 	else if (_cmd == "WHO")
@@ -33,75 +33,74 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		Msg(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "INVITE")
 		Invite(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "KICK")
+		Kick(ExtractArgs(_data), _client, _server);
 	else
 		NotFound(_cmd, _client);
 }
 
 void Command::Pass(string _data, Client *_client, Server *_server)
 {
-	string _msg = "";
-	if (_client->GetAuthentified())
-		_client->Broadcast("You are already authentified\n");
-	if (_data == _server->GetPass())
+	if (_client->GetAuthentified() && !_client->GetNick().empty() && !_client->GetUser().empty())
+		_client->Broadcast("\x1b[1;31mYou are already authentified\n\x1b[0m");
+	else if (_client->GetAuthentified() && (_client->GetNick().empty() || _client->GetUser().empty()))
+		_client->Broadcast("\x1b[1;31mPassword has been entered\n\x1b[0m");
+	else if (_data == _server->GetPass())
 	{
 		_client->Authentify();
-		_msg = "Password is correct!\n";
-		_client->Broadcast(_msg);
+		_client->Broadcast("\x1b[1;32mPassword is correct\n\x1b[0m");
 	}
 	else
-	{
-		_msg = "Password does not match\n";
-		_client->Broadcast(_msg);
-	}
+		_client->Broadcast("\x1b[1;31mPassword doesn't match\n\x1b[0m");
 }
 
 void Command::Nick(string _data, Client *_client, Server *_server)
 {
-	string _msg = "";
 	if (!_client->GetAuthentified())
-		_client->Broadcast("Password hasn't been entered\n");
+		_client->Broadcast("\x1b[1;31mPassword hasn't been entered\n\x1b[0m");
 	else if (!_client->GetNick().empty())
-		_client->Broadcast("Nickname cannot be set multiple times\n");
+		_client->Broadcast("\x1b[1;31mNickname cannot be set multiple times\n\x1b[0m");
 	else if (_data.empty())
-	{
-		_msg = "Nickname cannot be left blank\n";
-		_client->Broadcast(_msg);
-	}
+		_client->Broadcast("\x1b[1;31mNickname cannot be left blank\n\x1b[0m");
 	else if (!_server->IsNameAvailable(_data))
-	{
-		_msg = "This nickname has already been picked\n";
-		_client->Broadcast(_msg);
-	}
+		_client->Broadcast("\x1b[1;31mThis nickname has already been picked\n\x1b[0m");
 	else
+	{
 		_client->SetNick(_data);
+
+		if (!_client->GetNick().empty() && !_client->GetUser().empty())
+		{
+			_client->Broadcast("\x1b[1;32mYou are now authentified\n\x1b[0m");
+			cout << "\x1b[1;32m" << *_client << " authentified\x1b[0m" << endl;
+		}
+	}
 }
 
 void Command::User(string _data, Client *_client)
 {
-	string _msg = "";
 	if (!_client->GetAuthentified())
-		_client->Broadcast("Password hasn't been entered\n");
+		_client->Broadcast("\x1b[1;31mPassword hasn't been entered\n\x1b[0m");
 	else if (!_client->GetUser().empty())
-		_client->Broadcast("Username cannot be set multiple times\n");
-	if (!_client->GetUser().empty())
-	{
-		_msg = "Username has already been set\n";
-		_client->Broadcast(_msg);
-	}
+		_client->Broadcast("\x1b[1;31mUsername cannot be set multiple times\n\x1b[0m");
 	else if (_data.empty())
-	{
-		_msg = "Username cannot be left blank\n";
-		_client->Broadcast(_msg);
-	}
+		_client->Broadcast("\x1b[1;31mUsername cannot be left blank\n\x1b[0m");
 	else
+	{
 		_client->SetUser(_data);
+
+		if (!_client->GetNick().empty() && !_client->GetUser().empty())
+		{
+			_client->Broadcast("\x1b[1;32mYou are now authentified\n\x1b[0m");
+			cout << "\x1b[1;32m" << *_client << " authentified\x1b[0m" << endl;
+		}
+	}
 }
 
 void Command::Invite(string _data, Client *_client, Server *_server)
 {
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
-		_client->Broadcast("\x1b[1;31mINVITE need a channel in argument\n\x1b[0m");
+		_client->Broadcast("\x1b[1;31mINVITE needs a channel in argument\n\x1b[0m");
 		return;
 	}
 
@@ -128,6 +127,36 @@ void Command::Invite(string _data, Client *_client, Server *_server)
 	}
 }
 
+void Command::Kick(string _data, Client *_client, Server *_server)
+{
+	if (_data.size() <= 1 || _data[0] != '#')
+	{
+		_client->Broadcast("\x1b[1;31mKICK needs a channel in argument\n\x1b[0m");
+		return;
+	}
+
+	Channel *_channel = _server->GetChannel(&ExtractCommand(_data)[1]);
+
+	if (_channel)
+	{
+		_data += "\n";
+		Client* _dest = _server->GetClient(ExtractArgs(_data));
+
+		if (!_dest)
+		{
+			string _msg = "\x1b[1;31m" + ExtractArgs(_data) + " isn't a valid destination\n\x1b[0m";
+			_client->Broadcast(_msg);
+			return;
+		}
+
+		_channel->Kick(*_client, *_dest, ExtractMsg(_data));
+	}
+	else
+	{
+		string _msg = "\x1b[1;31m" + ExtractCommand(_data) + " isn't a valid channel\n\x1b[0m";
+		_client->Broadcast(_msg);
+	}
+}
 
 void Command::NotFound(string _data, Client *_client)
 {
@@ -139,7 +168,7 @@ void Command::Join(string _data, Client *_client, Server *_server)
 {
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
-		_client->Broadcast("\x1b[1;31mJOIN need a channel in argument\n\x1b[0m");
+		_client->Broadcast("\x1b[1;31mJOIN needs a channel in argument\n\x1b[0m");
 		return;
 	}
 
@@ -158,7 +187,7 @@ void Command::Part(string _data, Client *_client, Server *_server)
 {
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
-		_client->Broadcast("\x1b[1;31mPART need a channel in argument\n\x1b[0m");
+		_client->Broadcast("\x1b[1;31mPART needs a channel in argument\n\x1b[0m");
 		return;
 	}
 
@@ -166,9 +195,12 @@ void Command::Part(string _data, Client *_client, Server *_server)
 
 	if (_channel)
 	{
-		_channel->QuitChannel(*_client);
+		_channel->QuitChannel(*_client, true);
 		if (_channel->Users() == 0)
-			_server->RemoveChannel(_channel->Name());
+		{
+			_server->AddToRemoveChannel(*_channel);
+			_server->RemoveChannel();
+		}
 	}
 	else
 	{
@@ -181,18 +213,18 @@ void Command::Quit(string _data, Client *_client, Server *_server)
 {
 	if (_data.size() > 0)
 	{
-		_client->Broadcast("\x1b[1;31mQUIT don't need any argument\n\x1b[0m");
+		_client->Broadcast("\x1b[1;31mQUIT don't needs any argument\n\x1b[0m");
 		return;
 	}
 
-	_server->RemoveClient(*_client);
+	_server->RemoveClient(*_client, true);
 }
 
 void Command::Msg(std::string _data, Client *_client, Server *_server)
 {
 	if (_data.size() < 0)
 	{
-		_client->Broadcast("\x1b[1;31mPRIVMSG need a destination in argument\n\x1b[0m");
+		_client->Broadcast("\x1b[1;31mPRIVMSG needs a destination in argument\n\x1b[0m");
 		return;
 	}
 
@@ -214,7 +246,7 @@ void Command::Msg(std::string _data, Client *_client, Server *_server)
 			_dest->Broadcast(_msg);
 			_msg = "\x1b[1;32mYour message has been send to " + _destName + "\n\x1b[0m";
 			_client->Broadcast(_msg);
-			cout << "\x1b[1;32m" << *_client << " Send Message To" << *_dest << "\n\x1b[0m" << endl;
+			cout << "\x1b[1;32m" << *_client << " Send Message To " << *_dest << "\x1b[0m" << endl;
 		}
 	}
 	else
@@ -242,7 +274,7 @@ void Command::Who(string _data, Client* _client, Server *_server)
 {
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
-		_client->Broadcast("\x1b[1;31mWHO need a channel in argument\n\x1b[0m");
+		_client->Broadcast("\x1b[1;31mWHO needs a channel in argument\n\x1b[0m");
 		return;
 	}
 

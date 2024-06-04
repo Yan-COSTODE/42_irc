@@ -95,6 +95,7 @@ void Server::AcceptNewClient()
 	clients.push_back(_client);
 	fds.push_back(_poll);
 	cout << "\x1b[1;32m" << _client << " Connected\x1b[0m" << endl;
+	_client.Broadcast("\x1b[1;32mYou are connected to the server, you needs to authentify yourself\n\x1b[0m");
 }
 
 void Server::ReceiveNewData(int _fd)
@@ -105,9 +106,10 @@ void Server::ReceiveNewData(int _fd)
 
 	if (_bytes <= 0)
 	{
-		cout << "\x1b[1;31mClient <" << _fd << "> Disconnected\x1b[0m" << endl;
-		ClearClients(_fd);
-		close(_fd);
+		Client* _client = GetClient(_fd);
+
+		if (_client)
+			RemoveClient(*_client, false);
 	}
 	else
 	{
@@ -119,12 +121,7 @@ void Server::ReceiveNewData(int _fd)
 void Server::CloseFds()
 {
 	for(size_t i = 0; i < clients.size(); i++)
-	{
-		cout << "\x1b[1;31m" << clients[i] << " Disconnected\x1b[0m" << endl;
-		string _msg = "\x1b[1;31mYou have been disconnected from the server\n\x1b[0m";
-		clients[i].Broadcast(_msg);
-		close(clients[i].GetFd());
-	}
+		RemoveClient(clients[i], true);
 
 	if (serverSocket != -1)
 	{
@@ -133,11 +130,34 @@ void Server::CloseFds()
 	}
 }
 
-void Server::RemoveClient(Client _client)
+void Server::AddToRemoveChannel(Channel _channel)
+{
+	toRemoved.push_back(_channel);
+}
+
+void Server::RemoveClient(Client _client, bool _sendMsg)
 {
 	cout << "\x1b[1;31m" << _client << " Disconnected\x1b[0m" << endl;
-	string _msg = "\x1b[1;31mYou have been disconnected from the server\n\x1b[0m";
-	_client.Broadcast(_msg);
+
+	for (map<string, Channel>::iterator it = channels.begin(); it != channels.end(); it++) {
+		Channel& _channel = it->second;
+
+		if (_channel.CheckUser(_client))
+		{
+			_channel.QuitChannel(_client, false);
+
+			if (_channel.Users() == 0)
+				AddToRemoveChannel(_channel);
+		}
+	}
+
+	RemoveChannel();
+
+	if (_sendMsg)
+	{
+		string _msg = "\x1b[1;31mYou have been disconnected from the server\n\x1b[0m";
+		_client.Broadcast(_msg);
+	}
 	ClearClients(_client.GetFd());
 	close(_client.GetFd());
 }
@@ -207,13 +227,16 @@ Channel* Server::AddChannel(string _name)
 	return &channels[_name];
 }
 
-void Server::RemoveChannel(string _name)
+void Server::RemoveChannel()
 {
-	if (channels.find(_name) != channels.end())
+	for (size_t i = 0; i < toRemoved.size(); ++i)
 	{
-		cout << "\x1b[1;32m" << channels[_name] << " Erased\x1b[0m" << endl;
-		channels.erase(_name);
+		Channel _channel = toRemoved[i];
+		cout << "\x1b[1;32m" << _channel << " Erased\x1b[0m" << endl;
+		channels.erase(_channel.Name());
 	}
+
+	toRemoved.clear();
 }
 
 bool Server::IsNameAvailable(string _name)
@@ -225,8 +248,6 @@ bool Server::IsNameAvailable(string _name)
 	}
 	return true;
 }
-
-
 
 void Server::SignalHandler(int _signum)
 {

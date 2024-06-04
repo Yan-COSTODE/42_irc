@@ -18,20 +18,26 @@ class Channel {
 		string password;
 		string topic;
 		int userLimit;
+		int adminNumber;
+		int userNumber;
+		int invitedNumber;
 		vector<Client> admin;
 		vector<Client> user;
 		vector<Client> invited;
 
 	private:
-		void RemoveFrom(vector<Client>* _vector, Client _client);
+		void RemoveAdmin(Client _client);
+		void RemoveUser(Client _client);
+		void RemoveInvited(Client _client);
 
-	public:
+public:
 		Channel();
 		Channel(string _name);
 		void JoinChannel(Client _client);
 		void Invite(Client _client, Client _dest);
-		void QuitChannel(Client _client);
+		void QuitChannel(Client _client, bool _sendMsg);
 		void ToggleAdmin(Client _admin, Client _client);
+		void Kick(Client _admin, Client _client, string _reason);
 		void Broadcast(string _msg);
 		bool IsIn(Client _client);
 		string Name() const;

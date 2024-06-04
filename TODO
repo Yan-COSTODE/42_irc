@@ -1,8 +1,8 @@
 -- CONNECTIONS --
 
-NICK nickname
-USER username
-PASS password
+        NICK nickname
+        USER username
+        PASS password
 
 -- BASICS --
 
@@ -23,6 +23,6 @@ MODE #channel option
     - l | remove user limit
     - l number | set user limit
 KICK #channel name | kick from channel
-INVITE #channel name | invite to channel
-TOPIC #channel | view channel topic
-TOPIC #channel msg | change channel topic
+        INVITE #channel name | invite to channel
+        TOPIC #channel | view channel topic
+        TOPIC #channel msg | change channel topic

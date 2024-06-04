@@ -9,6 +9,9 @@ Channel::Channel()
 	password = "";
 	topic = "";
 	userLimit = -1;
+	userNumber = 0;
+	adminNumber = 0;
+	invitedNumber = 0;
 }
 
 Channel::Channel(string _name)
@@ -19,11 +22,14 @@ Channel::Channel(string _name)
 	password = "";
 	topic = "";
 	userLimit = -1;
+	userNumber = 0;
+	adminNumber = 0;
+	invitedNumber = 0;
 }
 
 bool Channel::CheckAdmin(Client _client)
 {
-	if (admin.empty())
+	if (adminNumber == 0)
 		return false;
 
 	if (find(admin.begin(), admin.end(), _client) == admin.end())
@@ -33,7 +39,7 @@ bool Channel::CheckAdmin(Client _client)
 
 bool Channel::CheckUser(Client _client)
 {
-	if (user.empty())
+	if (userNumber == 0)
 		return false;
 
 	if (find(user.begin(), user.end(), _client) == user.end())
@@ -43,17 +49,40 @@ bool Channel::CheckUser(Client _client)
 
 bool Channel::CheckInvited(Client _client)
 {
-	if (invited.empty())
+	if (invitedNumber == 0)
 		return false;
 
 	if (find(invited.begin(), invited.end(), _client) == invited.end())
 		return false;
+
 	return true;
 }
 
-void Channel::RemoveFrom(vector<Client>* _vector, Client _client)
+void Channel::RemoveAdmin(Client _client)
 {
-	_vector->erase(remove(_vector->begin(), _vector->end(), _client), _vector->end());
+	if (adminNumber == 0)
+		return;
+
+	admin.erase(remove(admin.begin(), admin.end(), _client), admin.end());
+	adminNumber--;
+}
+
+void Channel::RemoveUser(Client _client)
+{
+	if (userNumber == 0)
+		return;
+
+	user.erase(remove(user.begin(), user.end(), _client), user.end());
+	userNumber--;
+}
+
+void Channel::RemoveInvited(Client _client)
+{
+	if (invitedNumber == 0)
+		return;
+
+	invited.erase(remove(invited.begin(), invited.end(), _client), invited.end());
+	invitedNumber--;
 }
 
 void Channel::JoinChannel(Client _client)
@@ -76,14 +105,22 @@ void Channel::JoinChannel(Client _client)
 		return ;
 
 	user.push_back(_client);
-	RemoveFrom(&invited, _client);
+	userNumber++;
+
+	if (CheckInvited(_client))
+		RemoveInvited(_client);
 
 	if (admin.size() == 0)
+	{
 		admin.push_back(_client);
+		adminNumber++;
+	}
 
 	string _msg = "\x1b[1;32mYou have joined " + name + "\x1b[0m\n";
 	_client.Broadcast(_msg);
 	cout << "\x1b[1;32m" << _client << " Joined " << *this << endl;
+	_msg = "\x1b[1;32m" + _client.GetNick() + " joined the channel " + name + "\n\x1b[0m";
+	Broadcast(_msg);
 }
 
 void Channel::Invite(Client _client, Client _dest)
@@ -100,8 +137,11 @@ void Channel::Invite(Client _client, Client _dest)
 		return;
 	}
 
-	if (!CheckInvited(_client))
-		invited.push_back(_client);
+	if (!CheckInvited(_dest))
+	{
+		invited.push_back(_dest);
+		invitedNumber++;
+	}
 
 	string _msg = "\x1b[1;32mYou invited " + _dest.GetNick() + " to " + name + "\n\x1b[0m";
 	_client.Broadcast(_msg);
@@ -114,7 +154,7 @@ int Channel::Users()
 	return user.size();
 }
 
-void Channel::QuitChannel(Client _client)
+void Channel::QuitChannel(Client _client, bool _sendMsg)
 {
 	if (!CheckUser(_client))
 	{
@@ -123,12 +163,20 @@ void Channel::QuitChannel(Client _client)
 		return;
 	}
 
-	RemoveFrom(&user, _client);
-	RemoveFrom(&admin, _client);
+	RemoveUser(_client);
 
-	string _msg = "\x1b[1;32mYou quit " + name + "\x1b[0m\n";
-	_client.Broadcast(_msg);
+	if (CheckAdmin(_client))
+		RemoveAdmin(_client);
+
+	if (_sendMsg)
+	{
+		string _msg = "\x1b[1;32mYou quit " + name + "\x1b[0m\n";
+		_client.Broadcast(_msg);
+	}
+
 	cout << "\x1b[1;32m" << _client << " Left " << *this << endl;
+	string _msg = "\x1b[1;31m" + _client.GetNick() + " left the channel " + name + "\n\x1b[0m";
+	Broadcast(_msg);
 }
 
 void Channel::ToggleAdmin(Client _admin, Client _client)
@@ -147,19 +195,68 @@ void Channel::ToggleAdmin(Client _admin, Client _client)
 
 	if (CheckAdmin(_client))
 	{
-		RemoveFrom(&admin, _client);
-		_admin.Broadcast("\x1b[1;31mYou aren't allowed to do that\n\x1b[0m");
+		RemoveAdmin(_client);
+		_admin.Broadcast("\x1b[1;31mYou oui\n\x1b[0m");
 		return;
 	}
 	else
 	{
 		admin.push_back(_client);
+		adminNumber++;
 		string _msg = "\x1b[1;32mYou made " + _client.GetNick() + "an operator\x1b[0m\n";
 		_admin.Broadcast(_msg);
 		_msg = "\x1b[1;32m" + _admin.GetNick() + "made you an operator\x1b[0m\n";
 		_client.Broadcast(_msg);
 		return;
 	}
+}
+
+void Channel::Kick(Client _admin, Client _client, string _reason)
+{
+	if (!CheckAdmin(_admin))
+	{
+		_admin.Broadcast("\x1b[1;31mYou aren't allowed to do that\n\x1b[0m");
+		return;
+	}
+
+	if (_admin == _client)
+	{
+		_admin.Broadcast("\x1b[1;31mYou can't kick yourself\n\x1b[0m");
+		return;
+	}
+
+	if (!CheckUser(_client))
+	{
+		string _msg = "\x1b[1;31mNo " + _client.GetNick() + " found in " + name + "\x1b[0m\n";
+		_admin.Broadcast(_msg);
+		return;
+	}
+
+	RemoveUser(_client);
+
+	if (CheckAdmin(_client))
+		RemoveAdmin(_client);
+
+	string _msg = "\x1b[1;32mYou kicked " + _client.GetNick() + " from " + name + "\n\x1b[0m";
+	_admin.Broadcast(_msg);
+	_msg = "\x1b[1;31m" + _admin.GetNick() + " kicked you from" + name;
+
+	if (_reason.empty())
+		_msg += "\x1b[0m\n";
+	else
+		_msg += " because " + _reason + "\x1b[0m\n";
+
+	_client.Broadcast(_msg);
+	cout << "\x1b[1;32m" << _client << " Left " << *this << endl;
+	_msg = "\x1b[1;31m" + _client.GetNick() + " has been kick from the channel " + name;
+
+	if (_reason.empty())
+		_msg += "\x1b[0m\n";
+	else
+		_msg += " because " + _reason + "\x1b[0m\n";
+
+	Broadcast(_msg);
+	return;
 }
 
 void Channel::Broadcast(string _msg)
@@ -172,28 +269,32 @@ string Channel::Who()
 {
 	string _msg = "\x1b[1;37m--- " + name + " ---\n";
 
-	for(size_t i = 0; i < admin.size(); i++)
+	for(int i = 0; i < adminNumber; i++)
 	{
 		Client _client = admin[i];
 		_msg += _client.GetNick();
 		_msg += ": operator\n";
 	}
 
-	for(size_t i = 0; i < user.size(); i++)
+	for(int i = 0; i < userNumber; i++)
 	{
 		Client _client = user[i];
+
+		if(CheckAdmin(_client))
+			continue;
+
 		_msg += _client.GetNick();
-		_msg += ": operator\n";
+		_msg += "\n";
 	}
 
-	for(size_t i = 0; i < invited.size(); i++)
+	for(int i = 0; i < invitedNumber; i++)
 	{
 		Client _client = invited[i];
 		_msg += _client.GetNick();
 		_msg += ": invited\n";
 	}
 
-	_msg += "--- " + name + " ---\x1b[0m";
+	_msg += "--- " + name + " ---\n\x1b[0m";
 	return _msg;
 }
 
