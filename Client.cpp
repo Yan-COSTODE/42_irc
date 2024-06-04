@@ -29,6 +29,11 @@ string Client::GetUser()
 	return user;
 }
 
+bool Client::GetAuthentified() const
+{
+	return authentified;
+}
+
 void Client::Authentify()
 {
 	authentified = true;

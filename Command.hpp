@@ -14,6 +14,9 @@ class Command {
 		static void Join(string _data, Client* _client, Server* _server);
 		static void Part(string _data, Client* _client, Server* _server);
 		static void Invite(string _data, Client *_client, Server *_server);
+		static void Pass(string _data, Client *_client, Server *_server);
+		static void Nick(string _data, Client *_client, Server *_server);
+		static void User(string _data, Client *_client);
 		static string ExtractCommand(string _data);
 		static string ExtractArgs(string _data);
 };

@@ -21,6 +21,7 @@ class Client {
 		Client(int _fd, string _ipAddress);
 		int GetFd();
 		string GetUser();
+		bool GetAuthentified() const;
 		void Authentify();
 		void SetUser(string _user);
 		void SetNick(string _nick);

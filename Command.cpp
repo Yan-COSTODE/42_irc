@@ -5,56 +5,20 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 	string _cmd = ExtractCommand(_data);
 	string _msg = "";
 
-	if (_cmd == "PASS")
-	{
-		string data = ExtractArgs(_data);
-		if (data == _server->GetPass())
-			_client->Authentify();
-		else
-		{
-			_msg = "Password does not match\n";
-			_client->Broadcast(_msg);
-		}
-		return ;
-	}
-	if (_cmd == "USER")
-	{
-		if (_cmd.empty())
-		{
-			_msg = "Username cannot be left blank\n";
-			_client->Broadcast(_msg);
-		}
-		else
-			_client->SetUser(_cmd);
-		return ;
-	}
-	if (_cmd == "NICK")
-	{
-		if (_cmd.empty())
-		{
-			_msg = "Nickname cannot be left blank\n";
-			_client->Broadcast(_msg);
-		}
-		else if (!_server->IsNameAvailable(_cmd))
-		{
-			_msg = "This nickname has already been picked\n";
-			_client->Broadcast(_msg);
-			return ;
-		}
-		else
-			_client->SetNick(_cmd);
-		return ;
-	}
+	cout << "\x1b[1;37mClient <" << _client->GetNick() << "> Data: " << _data << "\x1b[0m" << flush;
 
+	if (_cmd == "PASS")
+		Pass(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "NICK")
+		Nick(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "USER")
+		User(ExtractArgs(_data), _client);
 	else if (_client->GetNick().empty() || _client->GetUser().empty())
 	{
 		_msg = "\x1b[1;31mYou need to authentify yourself before executing any command\n\x1b[0m";
 		_client->Broadcast(_msg);
 	}
-
-	cout << "\x1b[1;37mClient <" << _client->GetNick() << "> Data: " << _data << "\x1b[0m" << flush;
-
-	if (_cmd == "WHO")
+	else if (_cmd == "WHO")
 		Who(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "JOIN")
 		Join(ExtractArgs(_data), _client, _server);
@@ -64,6 +28,66 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		Invite(ExtractArgs(_data), _client, _server);
 	else
 		NotFound(_cmd, _client);
+}
+
+void Command::Pass(string _data, Client *_client, Server *_server)
+{
+	string _msg = "";
+	if (_client->GetAuthentified())
+		_client->Broadcast("You are already authentified\n");
+	if (_data == _server->GetPass())
+	{
+		_client->Authentify();
+		_msg = "Password is correct!\n";
+		_client->Broadcast(_msg);
+	}
+	else
+	{
+		_msg = "Password does not match\n";
+		_client->Broadcast(_msg);
+	}
+}
+
+void Command::Nick(string _data, Client *_client, Server *_server)
+{
+	string _msg = "";
+	if (!_client->GetAuthentified())
+		_client->Broadcast("Password hasn't been entered\n");
+	else if (!_client->GetNick().empty())
+		_client->Broadcast("Nickname cannot be set multiple times\n");
+	else if (_data.empty())
+	{
+		_msg = "Nickname cannot be left blank\n";
+		_client->Broadcast(_msg);
+	}
+	else if (!_server->IsNameAvailable(_data))
+	{
+		_msg = "This nickname has already been picked\n";
+		_client->Broadcast(_msg);
+	}
+	else
+		_client->SetNick(_data);
+}
+
+void Command::User(string _data, Client *_client)
+{
+	string _msg = "";
+	if (!_client->GetAuthentified())
+		_client->Broadcast("Password hasn't been entered\n");
+	else if (!_client->GetUser().empty())
+		_client->Broadcast("Username cannot be set multiple times\n");
+	if (!_client->GetUser().empty())
+	{
+		_msg = "Username has already been set\n";
+		_client->Broadcast(_msg);
+	}
+	else if (_data.empty())
+	{
+		_msg = "Username cannot be left blank\n";
+		_client->Broadcast(_msg);
+	}
+	else
+		_client->SetUser(_data);
 }
 
 void Command::Invite(string _data, Client *_client, Server *_server)
