@@ -7,6 +7,7 @@ Client::Client(int _fd, string _ipAddress)
 	authentified = false;
 	nick = "";
 	user = "";
+	bot = false;
 }
 
 int Client::GetFd() const
@@ -39,6 +40,16 @@ void Client::Authentify()
 	authentified = true;
 }
 
+void Client::SetBot(bool _status)
+{
+	bot = _status;
+}
+
+bool Client::GetBot() const
+{
+	return bot;
+}
+
 void Client::SetUser(string _user)
 {
 	user = _user;
@@ -60,7 +71,12 @@ bool Client::operator==(const Client &_other) const
 
 ostream& operator<<(ostream& _os, const Client& _client)
 {
-	string _output = "Client <";
+	string _output = "";
+
+	if (_client.GetBot())
+		_output = "Bot <";
+	else
+		_output = "Client <";
 
 	if (_client.GetNick().empty())
 	{

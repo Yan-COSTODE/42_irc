@@ -15,22 +15,28 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 	else if (_cmd == "NICK")
 		Nick(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "USER")
-		User(ExtractArgs(_data), _client);
+		User(ExtractArgs(_data), _client, _server);
 	else if (_client->GetNick().empty() || _client->GetUser().empty())
 	{
 		_msg = "\x1b[1;31mYou need to authentify yourself before executing any command\n\x1b[0m";
 		_client->Broadcast(_msg);
 	}
-	else if (_cmd == "WHO")
+	else if (_cmd == "PRIVMSG")
+		Msg(ExtractArgs(_data), _client, _server);
+	else if (_client->GetBot())
+		Bot(_data, _client);
+	else if (_cmd == "NAMES")
 		Who(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "METEO")
+		Meteo(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "JOIN")
 		Join(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "PING")
+		Ping(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "PART")
 		Part(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "QUIT")
 		Quit(ExtractArgs(_data), _client, _server);
-	else if (_cmd == "PRIVMSG")
-		Msg(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "INVITE")
 		Invite(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "KICK")
@@ -140,7 +146,7 @@ void Command::Nick(string _data, Client *_client, Server *_server)
 		_client->Broadcast("\x1b[1;31mNickname cannot be set multiple times\n\x1b[0m");
 	else if (_data.empty())
 		_client->Broadcast("\x1b[1;31mNickname cannot be left blank\n\x1b[0m");
-	else if (!_server->IsNameAvailable(_data))
+	else if (!_server->IsNameAvailable(_data) && !_client->GetBot())
 		_client->Broadcast("\x1b[1;31mThis nickname has already been picked\n\x1b[0m");
 	else
 	{
@@ -154,7 +160,27 @@ void Command::Nick(string _data, Client *_client, Server *_server)
 	}
 }
 
-void Command::User(string _data, Client *_client)
+void Command::Meteo(string _data, Client *_client, Server *_server)
+{
+	Client* _bot = _server->GetBot("Meteosaurus");
+
+	if (!_bot)
+	{
+		_client->Broadcast("\x1b[1;31mMeteosaurus isn't on the server\n\x1b[0m");
+		return;
+	}
+
+	if (_data.empty())
+	{
+		_client->Broadcast("\x1b[1;31mMETEO needs an argument\n\x1b[0m");
+		return;
+	}
+
+	string _msg = _client->GetNick() + "<meteo_data>" + _data;
+	_bot->Broadcast(_msg);
+}
+
+void Command::User(string _data, Client *_client, Server *_server)
 {
 	if (!_client->GetAuthentified())
 		_client->Broadcast("\x1b[1;31mPassword hasn't been entered\n\x1b[0m");
@@ -165,6 +191,9 @@ void Command::User(string _data, Client *_client)
 	else
 	{
 		_client->SetUser(_data);
+
+		if (_data == "<bot>")
+			_server->AddBot(*_client);
 
 		if (!_client->GetNick().empty() && !_client->GetUser().empty())
 		{
@@ -242,6 +271,12 @@ void Command::NotFound(string _data, Client *_client)
 	_client->Broadcast(_msg);
 }
 
+void Command::Bot(std::string _data, Client *_client)
+{
+	string _msg = "\x1b[1;31m" + _data + " isn't a valid command for a bot\n\x1b[0m";
+	_client->Broadcast(_msg);
+}
+
 void Command::Join(string _data, Client *_client, Server *_server)
 {
 	if (_data.size() <= 1 || _data[0] != '#')
@@ -298,6 +333,13 @@ void Command::Quit(string _data, Client *_client, Server *_server)
 	_server->RemoveClient(*_client, true);
 }
 
+void Command::Ping(std::string _data, Client *_client, Server *_server)
+{
+	(void)_server;
+	string _msg = "\x1b[1;32mPONG " + _data + "\x1b[0m\n";
+	_client->Broadcast(_msg);
+}
+
 void Command::Msg(std::string _data, Client *_client, Server *_server)
 {
 	if (_data.size() < 0)
@@ -320,7 +362,7 @@ void Command::Msg(std::string _data, Client *_client, Server *_server)
 		}
 		else
 		{
-			string _msg = _client->GetNick() + ": " + ExtractMsg(_data);
+			string _msg = "\x1b[1;37m" + _client->GetNick() + ": \x1b[0m" + ExtractMsg(_data);
 			_dest->Broadcast(_msg);
 			_msg = "\x1b[1;32mYour message has been send to " + _destName + "\n\x1b[0m";
 			_client->Broadcast(_msg);
@@ -352,7 +394,7 @@ void Command::Who(string _data, Client* _client, Server *_server)
 {
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
-		_client->Broadcast("\x1b[1;31mWHO needs a channel in argument\n\x1b[0m");
+		_client->Broadcast("\x1b[1;31mNAMES needs a channel in argument\n\x1b[0m");
 		return;
 	}
 

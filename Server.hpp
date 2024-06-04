@@ -24,6 +24,7 @@ class Server {
 		static bool Signal;
 		string password;
 		vector<Client> clients;
+		vector<Client> bots;
 		vector<struct pollfd> fds;
 		map<string, Channel> channels;
 		vector<Channel> toRemoved;
@@ -39,6 +40,8 @@ class Server {
 		void ReceiveNewData(int _fd);
 		void CloseFds();
 		void RemoveClient(Client _client, bool _sendMsg);
+		void RemoveBot(Client _client, bool _sendMsg);
+		Client* GetBot(string _name);
 		void ClearClients(int _fd);
 		Channel* GetChannel(string _name);
 		Channel* AddChannel(string _name);
@@ -47,6 +50,7 @@ class Server {
 		Client* GetClient(string _name);
 		string GetPass();
 		bool IsNameAvailable(string _name);
+		void AddBot(Client _client);
 
 		static void SignalHandler(int _signum);
 };

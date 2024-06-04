@@ -95,7 +95,7 @@ void Server::AcceptNewClient()
 	clients.push_back(_client);
 	fds.push_back(_poll);
 	cout << "\x1b[1;32m" << _client << " Connected\x1b[0m" << endl;
-	_client.Broadcast("\x1b[1;32mYou are connected to the server, you needs to authentify yourself\n\x1b[0m");
+	_client.Broadcast("\x1b[1;32mYou are connected to the server, you need to authentify yourself\n\x1b[0m");
 }
 
 void Server::ReceiveNewData(int _fd)
@@ -109,7 +109,12 @@ void Server::ReceiveNewData(int _fd)
 		Client* _client = GetClient(_fd);
 
 		if (_client)
-			RemoveClient(*_client, false);
+		{
+			if (_client->GetBot())
+				RemoveBot(*_client, false);
+			else
+				RemoveClient(*_client, false);
+		}
 	}
 	else
 	{
@@ -123,11 +128,41 @@ void Server::CloseFds()
 	for(size_t i = 0; i < clients.size(); i++)
 		RemoveClient(clients[i], true);
 
+	for(size_t i = 0; i < bots.size(); i++)
+		RemoveBot(bots[i], true);
+
 	if (serverSocket != -1)
 	{
 		cout <<"\x1b[1;31mServer <" << serverSocket << "> Disconnected\x1b[0m" << endl;
 		close(serverSocket);
 	}
+}
+
+void Server::AddBot(Client _client)
+{
+	_client.SetBot(true);
+
+	for(size_t i = 0; i < clients.size(); i++)
+	{
+		if (clients[i].GetFd() == _client.GetFd())
+		{
+			clients.erase(clients.begin() + i);
+			break;
+		}
+	}
+
+	bots.push_back(_client);
+}
+
+Client* Server::GetBot(std::string _name)
+{
+	for(size_t i = 0; i < bots.size(); i++)
+	{
+		if (bots[i].GetNick() == _name)
+			return &bots[i];
+	}
+
+	return NULL;
 }
 
 void Server::AddToRemoveChannel(Channel _channel)
@@ -158,6 +193,21 @@ void Server::RemoveClient(Client _client, bool _sendMsg)
 		string _msg = "\x1b[1;31mYou have been disconnected from the server\n\x1b[0m";
 		_client.Broadcast(_msg);
 	}
+
+	ClearClients(_client.GetFd());
+	close(_client.GetFd());
+}
+
+void Server::RemoveBot(Client _client, bool _sendMsg)
+{
+	cout << "\x1b[1;31m" << _client << " Disconnected\x1b[0m" << endl;
+
+	if (_sendMsg)
+	{
+		string _msg = "\x1b[1;31mYou have been disconnected from the server\n\x1b[0m";
+		_client.Broadcast(_msg);
+	}
+
 	ClearClients(_client.GetFd());
 	close(_client.GetFd());
 }
@@ -181,6 +231,15 @@ void Server::ClearClients(int _fd)
 			break;
 		}
 	}
+
+	for(size_t i = 0; i < bots.size(); i++)
+	{
+		if (bots[i].GetFd() == _fd)
+		{
+			bots.erase(bots.begin() + i);
+			break;
+		}
+	}
 }
 
 string Server::GetPass()
@@ -195,6 +254,13 @@ Client* Server::GetClient(int _fd)
 		if (clients[i].GetFd() == _fd)
 			return &clients[i];
 	}
+
+	for(size_t i = 0; i < bots.size(); i++)
+	{
+		if (bots[i].GetFd() == _fd)
+			return &bots[i];
+	}
+
 	return NULL;
 }
 
