@@ -19,9 +19,43 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		Quit(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "PRIVMSG")
 		Msg(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "INVITE")
+		Invite(ExtractArgs(_data), _client, _server);
 	else
 		NotFound(_cmd, _client);
 }
+
+void Command::Invite(string _data, Client *_client, Server *_server)
+{
+	if (_data.size() <= 1 || _data[0] != '#')
+	{
+		_client->Broadcast("\x1b[1;31mINVITE need a channel in argument\n\x1b[0m");
+		return;
+	}
+
+	Channel *_channel = _server->GetChannel(&ExtractCommand(_data)[1]);
+
+	if (_channel)
+	{
+		_data += "\n";
+		Client* _dest = _server->GetClient(ExtractArgs(_data));
+
+		if (!_dest)
+		{
+			string _msg = "\x1b[1;31m" + ExtractArgs(_data) + " isn't a valid destination\n\x1b[0m";
+			_client->Broadcast(_msg);
+			return;
+		}
+
+		_channel->Invite(*_client, *_dest);
+	}
+	else
+	{
+		string _msg = "\x1b[1;31m" + ExtractCommand(_data) + " isn't a valid channel\n\x1b[0m";
+		_client->Broadcast(_msg);
+	}
+}
+
 
 void Command::NotFound(string _data, Client *_client)
 {
@@ -104,10 +138,11 @@ void Command::Msg(std::string _data, Client *_client, Server *_server)
 		}
 		else
 		{
-			string _msg = _client->Nickname() + ": " + ExtractMsg(_data);
+			string _msg = _client->GetNick() + ": " + ExtractMsg(_data);
 			_dest->Broadcast(_msg);
 			_msg = "\x1b[1;32mYour message has been send to " + _destName + "\n\x1b[0m";
 			_client->Broadcast(_msg);
+			cout << "\x1b[1;32m" << *_client << " Send Message To" << *_dest << "\n\x1b[0m" << endl;
 		}
 	}
 	else
@@ -122,17 +157,17 @@ void Command::Msg(std::string _data, Client *_client, Server *_server)
 		}
 		else
 		{
-			string _msg = _client->Nickname() + ": " + ExtractMsg(_data);
+			string _msg = _client->GetNick() + ": " + ExtractMsg(_data);
 			_dest->Broadcast(_msg);
 			_msg = "\x1b[1;32mYour message has been send to " + _destName + "\n\x1b[0m";
 			_client->Broadcast(_msg);
+			cout << "\x1b[1;32m" << *_client << " Send Message To" << *_dest << "\n\x1b[0m" << endl;
 		}
 	}
 }
 
 void Command::Who(string _data, Client* _client, Server *_server)
 {
-
 	if (_data.size() <= 1 || _data[0] != '#')
 	{
 		_client->Broadcast("\x1b[1;31mWHO need a channel in argument\n\x1b[0m");

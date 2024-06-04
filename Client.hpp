@@ -17,10 +17,14 @@ class Client {
 		bool authentified;
 
 	public:
-		Client(int _fd, string _ipAddress);
 		bool operator==(const Client& _other) const;
-		string Nickname() const;
+		string GetNick() const;
+		Client(int _fd, string _ipAddress);
 		int GetFd() const;
+		string GetUser();
+		void Authentify();
+		void SetUser(string _user);
+		void SetNick(string _nick);
 		void Broadcast(string _msg);
 };
 

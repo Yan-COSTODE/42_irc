@@ -8,13 +8,13 @@ PASS password
 
         JOIN #channel | join a channel
         PART #channel | leave a channel
-PRIVMSG #dest msg | send a msg
+        PRIVMSG #dest msg | send a msg
         QUIT | disconnect user
         WHO | list user in channel
 
 -- OPERATOR --
 
-MODE option
+MODE #channel option
     - i | toggle invite-only channel
     - t | toggle TOPIC operator
     - k | remove password to channel
@@ -22,7 +22,7 @@ MODE option
     - o name | toggle operator on someone
     - l | remove user limit
     - l number | set user limit
-KICK | kick from channel
-INVITE | invite to channel
-TOPIC | view channel topic
-TOPIC msg | change channel topic
+KICK #channel name | kick from channel
+INVITE #channel name | invite to channel
+TOPIC #channel | view channel topic
+TOPIC #channel msg | change channel topic

@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	Server _server(_port);
+	Server _server(_port, argv[2]);
 
 	try
 	{

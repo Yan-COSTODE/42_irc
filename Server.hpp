@@ -22,6 +22,7 @@ class Server {
 		int port;
 		int serverSocket;
 		static bool Signal;
+		string password;
 		vector<Client> clients;
 		vector<struct pollfd> fds;
 		map<string, Channel> channels;
@@ -30,7 +31,7 @@ class Server {
 		Client* GetClient(int _fd);
 
 	public:
-		Server(int _port);
+		Server(int _port, string passwd);
 		void ServerInit();
 		void ServerSocket();
 		void AcceptNewClient();
@@ -42,6 +43,8 @@ class Server {
 		Channel* AddChannel(string _name);
 		void RemoveChannel(string _name);
 		Client* GetClient(string _name);
+		string GetPass();
+		bool IsNameAvailable(string _name);
 
 		static void SignalHandler(int _signum);
 };
