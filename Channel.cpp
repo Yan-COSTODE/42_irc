@@ -162,6 +162,21 @@ void Channel::ToggleAdmin(Client _admin, Client _client)
 	}
 }
 
+bool Channel::GetTopicAdmin() const
+{
+	return topicAdmin;
+}
+
+void Channel::SetTopic(string _topic)
+{
+	topic = _topic;
+}
+
+string Channel::GetTopic() const
+{
+	return topic;
+}
+
 void Channel::Broadcast(string _msg)
 {
 	for(size_t i = 0; i < user.size(); i++)

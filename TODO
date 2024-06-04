@@ -15,14 +15,14 @@ PASS password
 -- OPERATOR --
 
 MODE #channel option
-    - i | toggle invite-only channel
-    - t | toggle TOPIC operator
+    -+ i | toggle invite-only channel
+    -+ t | toggle TOPIC operator
     - k | remove password to channel
-    - k password | set password to channel
-    - o name | toggle operator on someone
+    + k password | set password to channel
+    -+ o name | toggle operator on someone
     - l | remove user limit
-    - l number | set user limit
+    + l number | set user limit
 KICK #channel name | kick from channel
 INVITE #channel name | invite to channel
-TOPIC #channel | view channel topic
-TOPIC #channel msg | change channel topic
+        TOPIC #channel | view channel topic
+        TOPIC #channel msg | change channel topic

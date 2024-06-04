@@ -11,7 +11,7 @@ using namespace std;
 class Client;
 
 class Channel {
-	protected:
+	private:
 		string name;
 		bool inviteOnly;
 		bool topicAdmin;
@@ -33,14 +33,16 @@ class Channel {
 		void QuitChannel(Client _client);
 		void ToggleAdmin(Client _admin, Client _client);
 		void Broadcast(string _msg);
+		bool GetTopicAdmin() const;
 		bool IsIn(Client _client);
+		string GetTopic() const;
 		string Name() const;
 		string Who();
 		int Users();
-
 		bool CheckAdmin(Client _client);
 		bool CheckUser(Client _client);
 		bool CheckInvited(Client _client);
+		void SetTopic(string _topic);
 };
 
 ostream& operator<<(ostream& _os, const Channel& _channel);
