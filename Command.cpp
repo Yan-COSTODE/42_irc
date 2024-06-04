@@ -18,7 +18,7 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		User(ExtractArgs(_data), _client);
 	else if (_client->GetNick().empty() || _client->GetUser().empty())
 	{
-		_msg = "\x1b[1;31mYou needs to authentify yourself before executing any command\n\x1b[0m";
+		_msg = "\x1b[1;31mYou need to authentify yourself before executing any command\n\x1b[0m";
 		_client->Broadcast(_msg);
 	}
 	else if (_cmd == "WHO")
@@ -35,9 +35,87 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		Invite(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "KICK")
 		Kick(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "MODE")
+		Mode(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "TOPIC")
+		Topic(ExtractArgs(_data), _client, _server);
 	else
 		NotFound(_cmd, _client);
 }
+
+vector<string> Command::SplitString(const string str)
+{
+	std::istringstream iss(str);
+	std::vector<std::string> result;
+	std::string word;
+
+	while (getline(iss, word, ' '))
+	{
+		if (!word.empty())
+			result.push_back(word);
+	}
+	return result;
+}
+
+void Command::Mode(string _data, Client *_client, Server *_server)
+{
+	(void)_data;
+	(void)_client;
+	(void)_server;
+}
+
+void Command::Topic(string _data, Client *_client, Server *_server)
+{
+	string _msg = "";
+	if (_data.size() >= 1)
+	{
+		Channel *_channel = _server->GetChannel(&ExtractCommand(_data)[1]);
+		if (!_channel)
+		{
+			_msg = "Channel " + ExtractCommand(_data) + " doesn't exist\n";
+			_client->Broadcast(_msg);
+		}
+		else if (_channel->GetTopicAdmin())
+		{
+			if (_channel->CheckAdmin(*_client))
+			{
+				if (!ExtractMsg(_data).empty())
+					_channel->SetTopic(ExtractMsg(_data));
+				else
+				{
+					_msg = "Topic: " + _channel->GetTopic();
+					_client->Broadcast(_msg);
+				}
+			}
+			else
+			{
+				_msg = "Only the operator can set the topic at the moment\n";
+				_client->Broadcast(_msg);
+			}
+		}
+		else if (_channel->CheckUser(*_client))
+		{
+			if (!ExtractMsg(_data).empty())
+				_channel->SetTopic(ExtractMsg(_data));
+			else
+			{
+				_msg = "Topic: " + _channel->GetTopic();
+				_client->Broadcast(_msg);
+			}
+		}
+		else
+		{
+			_msg = "You are not part of " +  ExtractCommand(_data);
+			_client->Broadcast(_msg);
+		}
+	}
+	else
+	{
+		_msg = "Topic command needs 1 or 2 arguments\n";
+		_client->Broadcast(_msg);
+	}
+}
+
 
 void Command::Pass(string _data, Client *_client, Server *_server)
 {

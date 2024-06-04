@@ -18,6 +18,9 @@ class Command {
 		static void Nick(string _data, Client *_client, Server *_server);
 		static void User(string _data, Client *_client);
 		static void Kick(string _data, Client *_client, Server *_server);
+		static void Mode(string _data, Client *_client, Server *_server);
+		static void Topic(string _data, Client *_client, Server *_server);
+		static vector<string> SplitString(const string str);
 		static string ExtractCommand(string _data);
 		static string ExtractArgs(string _data);
 		static string ExtractMsg(string _data);
