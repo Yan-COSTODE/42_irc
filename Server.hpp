@@ -14,6 +14,7 @@
 #include <csignal>
 #include <cstring>
 #include "Client.hpp"
+#include "define.hpp"
 
 using namespace std;
 
@@ -27,6 +28,7 @@ class Server {
 		vector<Client> bots;
 		vector<struct pollfd> fds;
 		map<string, Channel> channels;
+		map<int, string> buffer;
 		vector<Channel> toRemoved;
 
 	private:
@@ -39,7 +41,7 @@ class Server {
 		void AcceptNewClient();
 		void ReceiveNewData(int _fd);
 		void CloseFds();
-		void RemoveClient(Client _client, bool _sendMsg);
+		void RemoveClient(Client _client, string _reason);
 		void RemoveBot(Client _client, bool _sendMsg);
 		Client* GetBot(string _name);
 		void ClearClients(int _fd);
@@ -51,6 +53,10 @@ class Server {
 		string GetPass();
 		bool IsNameAvailable(string _name);
 		void AddBot(Client _client);
+		void TreatBuffer(int _fd, string _read);
+		void Broadcast(string _msg);
+		string List(Client _client);
+		void UpdateNick(string _old, string _new);
 
 		static void SignalHandler(int _signum);
 };

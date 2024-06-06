@@ -17,7 +17,7 @@ void Bot::Init()
 	_address.sin_addr.s_addr = INADDR_ANY;
 
 	if (connect(fd, (struct sockaddr*)&_address, sizeof(_address)) == -1)
-		throw(runtime_error("\x1b[1;31merror: failed to connect to server\x1b[0m"));
+		throw(runtime_error("error: failed to connect to server\r"));
 
 	Connect();
 	Loop();
@@ -35,7 +35,7 @@ void Bot::Loop()
 		{
 			string _user = _msg.substr(0, _pos);
 			string _meteo = GetMeteo(_msg.substr(_pos));
-			string _final = "PRIVMSG " + _user + " \x1b[1;37m" + _meteo + "\x1b[0m\n";
+			string _final = "PRIVMSG " + _user + " " + _meteo;
 			Send(_final);
 		}
 
@@ -46,11 +46,7 @@ void Bot::Loop()
 void Bot::Connect()
 {
 	Send("PASS " + password + "\n");
-	usleep(100000);
-	Receive();
-	Send("USER <bot>\n");
-	usleep(100000);
-	Receive();
+	Send("USER <bot> 0 * :<bot>\n");
 	Send("NICK Meteosaurus\n");
 	usleep(100000);
 	Receive();
@@ -58,6 +54,11 @@ void Bot::Connect()
 
 string Bot::GetWeatherData(string _location)
 {
+	for (int i = 0; i < (int)_location.size(); ++i) {
+		if (isspace(_location[i]))
+			_location.replace(i, 1, "%20");
+	}
+	
 	string _host = "api.openweathermap.org";
 	string _apiKey = "a879f58f7219cf3b00b8781546f35596";
 	string _path = "/data/2.5/weather?q=" + _location + "&appid=" + _apiKey + "&units=metric";
@@ -118,7 +119,7 @@ string Bot::ParseWeatherData(string _json)
 	size_t _tempPos = _json.find(_temp);
 
 	if (_weatherPos == string::npos || _tempPos == string::npos)
-		return "Error parsing weather data.";
+		return "";
 
 	size_t _weatherStart = _weatherPos + _desc.length();
 	size_t _weatherEnd = _json.find("\"", _weatherStart);
@@ -126,17 +127,31 @@ string Bot::ParseWeatherData(string _json)
 	size_t _tempStart = _tempPos + _temp.length();
 	size_t _tempEnd = _json.find(",", _tempStart);
 	string _tempStr = _json.substr(_tempStart, _tempEnd - _tempStart);
-	//float temperature = atof(_tempStr.c_str());
-
 	return _weatherDescription + ", " + _tempStr + "°C";
+}
+
+string Bot::CleanLocation(string _data)
+{
+	do
+	{
+		_data.erase(_data.size() - 2);
+	} while (isspace(_data[_data.size() - 1]));
+
+	string _final = _data;
+	return _final;
 }
 
 string Bot::GetMeteo(string _msg)
 {
-	string _location = _msg.substr(pattern.size());
+	string _location = CleanLocation(_msg.substr(pattern.size()));
+	cout << "\x1b[1;37mChecking weather data in " << _location << "\x1b[0m" << endl;
 	string _json = GetWeatherData(_location);
 	string _meteo = ParseWeatherData(_json);
-	return "The meteo in " + _location + " is " + _meteo;
+
+	if (_meteo.empty())
+		return "No data available for " + _location + "\n";
+
+	return "The meteo in " + _location + " is " + _meteo + "\n";
 }
 
 void Bot::Send(string _msg)
@@ -151,7 +166,7 @@ string Bot::Receive()
 	ssize_t _bytes = recv(fd, _buffer, sizeof(_buffer) - 1, 0);
 
 	if (_bytes <= 0)
-		throw(runtime_error("\x1b[1;31mYou have been disconnected from the server\x1b[0m"));
+		throw(runtime_error("You have been disconnected from the server\r"));
 	else
 	{
 		_buffer[_bytes] = '\0';

@@ -85,23 +85,30 @@ void Channel::RemoveInvited(Client _client)
 	invitedNumber--;
 }
 
-void Channel::JoinChannel(Client _client)
+void Channel::JoinChannel(Client _client, string _password)
 {
-	if (inviteOnly && !CheckInvited(_client))
+	if (!password.empty() && password != _password)
 	{
-		string _msg = "\x1b[1;31mYou have not been invited to " + name + "\x1b[0m\n";
-		_client.Broadcast(_msg);
-		return ;
-	}
-
-	if (CheckUser(_client))
-	{
-		string _msg = "\x1b[1;31mYou already have joined " + name + "\x1b[0m\n";
+		string _msg = ERR_BADCHANNELKEY(_client.GetNick(), "#" + name);
 		_client.Broadcast(_msg);
 		return ;
 	}
 
 	if (userLimit == -1 && user.size() == (size_t)userLimit)
+	{
+		string _msg = ERR_CHANNELISFULL(_client.GetNick(), "#" + name);
+		_client.Broadcast(_msg);
+		return ;
+	}
+
+	if (inviteOnly && !CheckInvited(_client))
+	{
+		string _msg = ERR_INVITEONLYCHAN(_client.GetNick(), "#" + name);
+		_client.Broadcast(_msg);
+		return ;
+	}
+
+	if (CheckUser(_client))
 		return ;
 
 	user.push_back(_client);
@@ -116,37 +123,23 @@ void Channel::JoinChannel(Client _client)
 		adminNumber++;
 	}
 
-	string _msg = "\x1b[1;32mYou have joined " + name + "\x1b[0m\n";
-	_client.Broadcast(_msg);
-	cout << "\x1b[1;32m" << _client << " Joined " << *this << endl;
-	_msg = "\x1b[1;32m" + _client.GetNick() + " joined the channel " + name + "\n\x1b[0m";
+	string _msg;
+	_msg = RPL_JOIN(_client.GetNick(), "#" + name);
 	Broadcast(_msg);
+
+	BroadcastTopic(_client);
+
+	_client.Broadcast(Names(_client));
+	cout << "\x1b[1;32m" << _client << " Joined " << *this << "\x1b[0m" << endl;
 }
 
-void Channel::Invite(Client _client, Client _dest)
+void Channel::Invite(Client _dest)
 {
-	if (!CheckAdmin(_client))
-	{
-		_client.Broadcast("\x1b[1;31mYou aren't allowed to do that\n\x1b[0m");
-		return;
-	}
-
-	if (CheckUser(_dest))
-	{
-		_client.Broadcast("\x1b[1;31mThis user is already in the channel\n\x1b[0m");
-		return;
-	}
-
 	if (!CheckInvited(_dest))
 	{
 		invited.push_back(_dest);
 		invitedNumber++;
 	}
-
-	string _msg = "\x1b[1;32mYou invited " + _dest.GetNick() + " to " + name + "\n\x1b[0m";
-	_client.Broadcast(_msg);
-	_msg = "\x1b[1;32mYou have been invited to " + name + " by " + _client.GetNick() + "\n\x1b[0m";
-	_dest.Broadcast(_msg);
 }
 
 int Channel::Users()
@@ -154,58 +147,45 @@ int Channel::Users()
 	return user.size();
 }
 
-void Channel::QuitChannel(Client _client, bool _sendMsg)
+void Channel::QuitChannel(Client _client, string _reason)
 {
-	if (!CheckUser(_client))
-	{
-		string _msg = "\x1b[1;31mYou are not in " + name + "\x1b[0m\n";
-		_client.Broadcast(_msg);
-		return;
-	}
-
+	string _msg = RPL_PART(_client.GetNick(), "#" + name, _reason);
+	Broadcast(_msg);
 	RemoveUser(_client);
 
 	if (CheckAdmin(_client))
 		RemoveAdmin(_client);
 
-	if (_sendMsg)
-	{
-		string _msg = "\x1b[1;32mYou quit " + name + "\x1b[0m\n";
-		_client.Broadcast(_msg);
-	}
-
-	cout << "\x1b[1;32m" << _client << " Left " << *this << endl;
-	string _msg = "\x1b[1;31m" + _client.GetNick() + " left the channel " + name + "\n\x1b[0m";
-	Broadcast(_msg);
+	cout << "\x1b[1;31m" << _client << " Left " << *this << "\x1b[0m" << endl;
 }
 
 void Channel::ToggleAdmin(Client _admin, Client _client)
 {
 	if (!CheckAdmin(_admin))
 	{
-		_admin.Broadcast("\x1b[1;31mYou aren't allowed to do that\n\x1b[0m");
+		_admin.Broadcast("You aren't allowed to do that\r\n");
 		return;
 	}
 
 	if (_admin == _client)
 	{
-		_admin.Broadcast("\x1b[1;31mYou can't change your own operator mode\n\x1b[0m");
+		_admin.Broadcast("You can't change your own operator mode\r\n");
 		return;
 	}
 
 	if (CheckAdmin(_client))
 	{
 		RemoveAdmin(_client);
-		_admin.Broadcast("\x1b[1;31mYou oui\n\x1b[0m");
+		_admin.Broadcast("You oui\r\n");
 		return;
 	}
 	else
 	{
 		admin.push_back(_client);
 		adminNumber++;
-		string _msg = "\x1b[1;32mYou made " + _client.GetNick() + "an operator\x1b[0m\n";
+		string _msg = "You made " + _client.GetNick() + "an operator\r\n";
 		_admin.Broadcast(_msg);
-		_msg = "\x1b[1;32m" + _admin.GetNick() + "made you an operator\x1b[0m\n";
+		_msg = "" + _admin.GetNick() + "made you an operator\r\n";
 		_client.Broadcast(_msg);
 		return;
 	}
@@ -213,49 +193,17 @@ void Channel::ToggleAdmin(Client _admin, Client _client)
 
 void Channel::Kick(Client _admin, Client _client, string _reason)
 {
-	if (!CheckAdmin(_admin))
-	{
-		_admin.Broadcast("\x1b[1;31mYou aren't allowed to do that\n\x1b[0m");
-		return;
-	}
-
 	if (_admin == _client)
-	{
-		_admin.Broadcast("\x1b[1;31mYou can't kick yourself\n\x1b[0m");
 		return;
-	}
 
-	if (!CheckUser(_client))
-	{
-		string _msg = "\x1b[1;31mNo " + _client.GetNick() + " found in " + name + "\x1b[0m\n";
-		_admin.Broadcast(_msg);
-		return;
-	}
-
+	string _msg = RPL_KICK(_admin.GetNick(), "#" +  name, _client.GetNick(), _reason);
+	Broadcast(_msg);
 	RemoveUser(_client);
 
 	if (CheckAdmin(_client))
 		RemoveAdmin(_client);
 
-	string _msg = "\x1b[1;32mYou kicked " + _client.GetNick() + " from " + name + "\n\x1b[0m";
-	_admin.Broadcast(_msg);
-	_msg = "\x1b[1;31m" + _admin.GetNick() + " kicked you from" + name;
-
-	if (_reason.empty())
-		_msg += "\x1b[0m\n";
-	else
-		_msg += " because " + _reason + "\x1b[0m\n";
-
-	_client.Broadcast(_msg);
-	cout << "\x1b[1;32m" << _client << " Left " << *this << endl;
-	_msg = "\x1b[1;31m" + _client.GetNick() + " has been kick from the channel " + name;
-
-	if (_reason.empty())
-		_msg += "\x1b[0m\n";
-	else
-		_msg += " because " + _reason + "\x1b[0m\n";
-
-	Broadcast(_msg);
+	cout << "\x1b[1;32m" << _client << " Left " << *this  << "\x1b[0m" << endl;
 	return;
 }
 
@@ -264,9 +212,18 @@ bool Channel::GetTopicAdmin() const
 	return topicAdmin;
 }
 
-void Channel::SetTopic(string _topic)
+void Channel::SetTopic(string _nick, string _topic)
 {
+	time_t _time;
+	time(&_time);
+	stringstream _ss;
+	_ss << _time;
+	topicTime = _ss.str();
+	topicNick = _nick;
 	topic = _topic;
+
+	for (int i = 0; i < (int)user.size(); ++i)
+		BroadcastTopic(user[i]);
 }
 
 string Channel::GetTopic() const
@@ -280,36 +237,27 @@ void Channel::Broadcast(string _msg)
 		user[i].Broadcast(_msg);
 }
 
-string Channel::Who()
+string Channel::Names(Client _client)
 {
-	string _msg = "\x1b[1;37m--- " + name + " ---\n";
+	string _msg;
 
 	for(int i = 0; i < adminNumber; i++)
 	{
-		Client _client = admin[i];
-		_msg += _client.GetNick();
-		_msg += ": operator\n";
+		Client _admin = admin[i];
+		_msg += RPL_NAMEREPLY(_client.GetNick(), "=", "#" + name, "@", _admin.GetNick()) + "\n";
 	}
 
 	for(int i = 0; i < userNumber; i++)
 	{
-		Client _client = user[i];
+		Client _user = user[i];
 
 		if(CheckAdmin(_client))
 			continue;
 
-		_msg += _client.GetNick();
-		_msg += "\n";
+		_msg += RPL_NAMEREPLY(_client.GetNick(), "=", "#" + name, "", _user.GetNick()) + "\n";
 	}
 
-	for(int i = 0; i < invitedNumber; i++)
-	{
-		Client _client = invited[i];
-		_msg += _client.GetNick();
-		_msg += ": invited\n";
-	}
-
-	_msg += "--- " + name + " ---\n\x1b[0m";
+	_msg += RPL_ENDOFNAMES(_client.GetNick(), "#" + name);
 	return _msg;
 }
 
@@ -321,6 +269,51 @@ string Channel::Name() const
 bool Channel::IsIn(Client _client)
 {
 	return CheckUser(_client);
+}
+
+bool Channel::GetInviteOnly() {
+	return inviteOnly;
+}
+
+void Channel::BroadcastTopic(Client _client)
+{
+	string _msg;
+
+	if (topic.empty())
+	{
+		_msg = RPL_NOTOPIC(_client.GetNick(), "#" + name);
+		_client.Broadcast(_msg);
+	}
+	else
+	{
+		_msg = RPL_TOPIC(_client.GetNick(), "#" + name, topic) + "\n";
+		_msg += RPL_TOPICWHOTIME(_client.GetNick(), "#" + name, topicNick, topicTime);
+		_client.Broadcast(_msg);
+	}
+}
+
+void Channel::UpdateNick(string _old, string _new)
+{
+	for(int i = 0; i < adminNumber; i++)
+	{
+		if (admin[i].GetNick() == _old)
+			admin[i].SetNick(_new);
+
+	}
+
+	for(int i = 0; i < userNumber; i++)
+	{
+		if (user[i].GetNick() == _old)
+			user[i].SetNick(_new);
+
+	}
+
+	for(int i = 0; i < invitedNumber; i++)
+	{
+		if (invited[i].GetNick() == _old)
+			invited[i].SetNick(_new);
+
+	}
 }
 
 ostream& operator<<(ostream& _os, const Channel& _channel)

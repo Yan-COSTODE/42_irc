@@ -17,7 +17,9 @@ int Client::GetFd() const
 
 void Client::Broadcast(string _msg)
 {
+	_msg += "\r\n";
 	send(fd, _msg.c_str(), _msg.size(), 0);
+	cout << "\x1b[1;37m" << *this << " Receive: " << _msg << "\x1b[0m" << flush;
 }
 
 string Client::GetNick() const
@@ -53,15 +55,11 @@ bool Client::GetBot() const
 void Client::SetUser(string _user)
 {
 	user = _user;
-	string _msg = "\x1b[1;32mYour username has been set to " + _user + "\n\x1b[0m";
-	Broadcast(_msg);
 }
 
 void Client::SetNick(string _nick)
 {
 	nick = _nick;
-	string _msg = "\x1b[1;32mYour nickname has been set to " + _nick + "\n\x1b[0m";
-	Broadcast(_msg);
 }
 
 bool Client::operator==(const Client &_other) const

@@ -28,6 +28,7 @@ class Bot {
 		string GetWeatherData(string _location);
 		string ParseWeatherData(string _json);
 		string Receive();
+		string CleanLocation(string _data);
 
 	public:
 		Bot(int _port, string _address, string _password);

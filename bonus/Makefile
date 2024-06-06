@@ -1,7 +1,7 @@
 CC=c++
 NAME = ircbot
 SRCS = main.cpp Bot.cpp
-HEADER = Bot.hpp httplib.h
+HEADER = Bot.hpp
 OBJS = $(SRCS:.cpp=.o)
 CFLAGS = -Wall -Wextra -Werror -g -std=c++98
 
