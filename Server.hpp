@@ -22,14 +22,15 @@ class Server {
 	private:
 		int port;
 		int serverSocket;
-		static bool Signal;
 		string password;
-		vector<Client> clients;
 		vector<Client> bots;
-		vector<struct pollfd> fds;
-		map<string, Channel> channels;
-		map<int, string> buffer;
+		vector<Client> clients;
 		vector<Channel> toRemoved;
+		vector<struct pollfd> fds;
+		map<int, string> buffer;
+		map<string, Channel> channels;
+
+		static bool Signal;
 
 	private:
 		Client* GetClient(int _fd);
@@ -37,26 +38,26 @@ class Server {
 	public:
 		Server(int _port, string passwd);
 		void ServerInit();
-		void ServerSocket();
-		void AcceptNewClient();
-		void ReceiveNewData(int _fd);
 		void CloseFds();
-		void RemoveClient(Client _client, string _reason);
-		void RemoveBot(Client _client, bool _sendMsg);
-		Client* GetBot(string _name);
-		void ClearClients(int _fd);
-		Channel* GetChannel(string _name);
-		Channel* AddChannel(string _name);
-		void RemoveChannel();
-		void AddToRemoveChannel(Channel _channel);
-		Client* GetClient(string _name);
 		string GetPass();
-		bool IsNameAvailable(string _name);
+		void ServerSocket();
+		void RemoveChannel();
+		void AcceptNewClient();
+		void ClearClients(int _fd);
 		void AddBot(Client _client);
-		void TreatBuffer(int _fd, string _read);
 		void Broadcast(string _msg);
 		string List(Client _client);
+		void ReceiveNewData(int _fd);
+		Client* GetBot(string _name);
+		Client* GetClient(string _name);
+		Channel* GetChannel(string _name);
+		Channel* AddChannel(string _name);
+		bool IsNameAvailable(string _name);
+		void TreatBuffer(int _fd, string _read);
+		void AddToRemoveChannel(Channel _channel);
 		void UpdateNick(string _old, string _new);
+		void RemoveBot(Client _client, bool _sendMsg);
+		void RemoveClient(Client _client, string _reason);
 
 		static void SignalHandler(int _signum);
 };

@@ -13,9 +13,9 @@ class Client;
 
 class Channel {
 	private:
-		string name;
 		bool inviteOnly;
 		bool topicAdmin;
+		string name;
 		string password;
 		string topic;
 		string topicTime;
@@ -29,32 +29,38 @@ class Channel {
 		vector<Client> invited;
 
 	private:
-		void RemoveAdmin(Client _client);
 		void RemoveUser(Client _client);
+		void RemoveAdmin(Client _client);
 		void RemoveInvited(Client _client);
 
 	public:
 		Channel();
 		Channel(string _name);
-		void JoinChannel(Client _client, string _password);
-		void Invite(Client _dest);
-		void QuitChannel(Client _client, string _reason);
-		void ToggleAdmin(Client _admin, Client _client);
-		void Kick(Client _admin, Client _client, string _reason);
-		void Broadcast(string _msg);
-		bool GetTopicAdmin() const;
-		bool IsIn(Client _client);
-		string GetTopic() const;
-		string Name() const;
-		string Names(Client _client);
 		int Users();
+		int GetUserLimit();
+		string Name() const;
+		string GetPassword();
 		bool GetInviteOnly();
-		bool CheckAdmin(Client _client);
+		string GetTopic() const;
+		void Invite(Client _dest);
+		bool IsIn(Client _client);
+		bool GetTopicAdmin() const;
+		void Broadcast(string _msg);
+		string Names(Client _client);
+		void SetUserLimit(int _limit);
 		bool CheckUser(Client _client);
+		bool CheckAdmin(Client _client);
+		void SetInviteOnly(bool _status);
+		void SetTopicAdmin(bool _status);
 		bool CheckInvited(Client _client);
-		void SetTopic(string _nick, string _topic);
+		void SetPassword(string _password);
 		void BroadcastTopic(Client _client);
 		void UpdateNick(string _old, string _new);
+		void SetTopic(string _nick, string _topic);
+		void ToggleAdmin(Client _admin, Client _client);
+		void JoinChannel(Client _client, string _password);
+		void QuitChannel(Client _client, string _reason);
+		void Kick(Client _admin, Client _client, string _reason);
 };
 
 ostream& operator<<(ostream& _os, const Channel& _channel);

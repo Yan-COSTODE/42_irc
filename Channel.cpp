@@ -94,7 +94,7 @@ void Channel::JoinChannel(Client _client, string _password)
 		return ;
 	}
 
-	if (userLimit == -1 && user.size() == (size_t)userLimit)
+	if (userLimit != -1 && user.size() == (size_t)userLimit)
 	{
 		string _msg = ERR_CHANNELISFULL(_client.GetNick(), "#" + name);
 		_client.Broadcast(_msg);
@@ -119,6 +119,7 @@ void Channel::JoinChannel(Client _client, string _password)
 
 	if (admin.size() == 0)
 	{
+		password = _password;
 		admin.push_back(_client);
 		adminNumber++;
 	}
@@ -162,31 +163,28 @@ void Channel::QuitChannel(Client _client, string _reason)
 void Channel::ToggleAdmin(Client _admin, Client _client)
 {
 	if (!CheckAdmin(_admin))
-	{
-		_admin.Broadcast("You aren't allowed to do that\r\n");
 		return;
-	}
 
 	if (_admin == _client)
 	{
-		_admin.Broadcast("You can't change your own operator mode\r\n");
+		string _msg = ERR_UNKNOWNERROR(_admin.GetNick(), "MODE", "You can't change your own operator mode");
+		_admin.Broadcast(_msg);
 		return;
 	}
 
 	if (CheckAdmin(_client))
 	{
+		string _msg = RPL_MODE(_admin.GetNick(), "#" + name, "-o " + _client.GetNick());
+		Broadcast(_msg);
 		RemoveAdmin(_client);
-		_admin.Broadcast("You oui\r\n");
 		return;
 	}
 	else
 	{
+		string _msg = RPL_MODE(_admin.GetNick(), "#" + name, "+o " + _client.GetNick());
+		Broadcast(_msg);
 		admin.push_back(_client);
 		adminNumber++;
-		string _msg = "You made " + _client.GetNick() + "an operator\r\n";
-		_admin.Broadcast(_msg);
-		_msg = "" + _admin.GetNick() + "made you an operator\r\n";
-		_client.Broadcast(_msg);
 		return;
 	}
 }
@@ -314,6 +312,35 @@ void Channel::UpdateNick(string _old, string _new)
 			invited[i].SetNick(_new);
 
 	}
+}
+
+void Channel::SetInviteOnly(bool _status)
+{
+	inviteOnly = _status;
+}
+
+void Channel::SetTopicAdmin(bool _status)
+{
+	topicAdmin = _status;
+}
+
+string Channel::GetPassword()
+{
+	return password;
+}
+
+void Channel::SetPassword(string _password)
+{
+	password = _password;
+}
+
+void Channel::SetUserLimit(int _limit)
+{
+	userLimit = _limit;
+}
+
+int Channel::GetUserLimit() {
+	return userLimit;
 }
 
 ostream& operator<<(ostream& _os, const Channel& _channel)

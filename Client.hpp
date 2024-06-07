@@ -18,18 +18,18 @@ class Client {
 		bool bot;
 
 	public:
-		bool operator==(const Client& _other) const;
-		string GetNick() const;
 		Client(int _fd, string _ipAddress);
-		int GetFd() const;
 		string GetUser();
-		bool GetBot() const;
-		bool GetAuthentified() const;
+		int GetFd() const;
 		void Authentify();
+		bool GetBot() const;
+		string GetNick() const;
+		void SetBot(bool _status);
 		void SetUser(string _user);
 		void SetNick(string _nick);
 		void Broadcast(string _msg);
-		void SetBot(bool _status);
+		bool GetAuthentified() const;
+		bool operator==(const Client& _other) const;
 };
 
 ostream& operator<<(ostream& _os, const Client& _client);

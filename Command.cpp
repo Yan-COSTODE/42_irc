@@ -55,6 +55,16 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 	}
 }
 
+int Command::GetFirstArg(vector<string>cmds)
+{
+	int i = 1;
+
+	while (i < (int)cmds.size() && (cmds.at(i)[0] == '-' || cmds.at(i)[0] == '+'))
+		i++;
+
+	return i;
+}
+
 vector<string> Command::SplitString(const string str)
 {
 	std::istringstream iss(str);
@@ -66,14 +76,256 @@ vector<string> Command::SplitString(const string str)
 		if (!word.empty())
 			result.push_back(word);
 	}
+
 	return result;
+}
+
+void Command::ModeI(string flag, Channel *_channel, Client *_client)
+{
+	if (flag == "+i")
+	{
+		if (!_channel->GetInviteOnly())
+		{
+			string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "+i");
+			_channel->Broadcast(_msg);
+			_channel->SetInviteOnly(true);
+		}
+		else
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", "Invite only mode is already set");
+			_client->Broadcast(_msg);
+		}
+	}
+	else
+	{
+		if (_channel->GetInviteOnly())
+		{
+			string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "-i");
+			_channel->Broadcast(_msg);
+			_channel->SetInviteOnly(false);
+		}
+		else
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", "Invite only mode is already unset");
+			_client->Broadcast(_msg);
+		}
+	}
+}
+
+void Command::ModeT(string flag, Channel *_channel, Client *_client)
+{
+	if (flag == "+t")
+	{
+		if (!_channel->GetTopicAdmin())
+		{
+			string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "+t");
+			_channel->Broadcast(_msg);
+			_channel->SetTopicAdmin(true);
+		}
+		else
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", "Topic operator mode is already set");
+			_client->Broadcast(_msg);
+		}
+	}
+	else
+	{
+		if (_channel->GetTopicAdmin())
+		{
+			string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "-t");
+			_channel->Broadcast(_msg);
+			_channel->SetTopicAdmin(false);
+		}
+		else
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", "Topic operator mode is already unset");
+			_client->Broadcast(_msg);
+		}
+	}
+}
+
+void Command::ModeK(string flag, Channel *_channel, Client *_client, string arg)
+{
+	if (flag == "-k")
+	{
+		(void)arg;
+		if (_channel->GetPassword().empty())
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", "Channel password is already unset");
+			_client->Broadcast(_msg);
+			return;
+		}
+		else
+		{
+			string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "-k");
+			_channel->Broadcast(_msg);
+			_channel->SetPassword("");
+		}
+	}
+	else
+	{
+		string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "+k " + arg);
+		_channel->Broadcast(_msg);
+		_channel->SetPassword(arg);
+	}
+}
+
+void Command::ModeL(string flag, Channel *_channel, Client *_client, string arg)
+{
+	if (flag == "+l")
+	{
+		if (atoi(arg.c_str()) <= 0)
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", "User limit cannot be set under 1");
+			_client->Broadcast(_msg);
+			return;
+		}
+
+		string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "+l " + arg);
+		_channel->Broadcast(_msg);
+		_channel->SetUserLimit(atoi(arg.c_str()));
+	}
+	else
+	{
+		if (_channel->GetUserLimit() == -1)
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", "User limit is already unset");
+			_client->Broadcast(_msg);
+			return;
+		}
+
+		string _msg = RPL_MODE(_client->GetNick(), "#" + _channel->Name(), "-l");
+		_channel->Broadcast(_msg);
+		_channel->SetUserLimit(-1);
+	}
+}
+
+void Command::ModeO(string flag, Channel *_channel, Client *_client, string arg, Server *_server)
+{
+	Client *_target = _server->GetClient(arg);
+
+	if (!_target)
+	{
+		string _msg = ERR_NOSUCHNICK(_client->GetNick(), arg);
+		_client->Broadcast(_msg);
+		return;
+	}
+
+	if (!_channel->CheckUser(*_target))
+	{
+		string _msg = ERR_USERNOTINCHANNEL(_client->GetNick(), _target->GetNick(), "#" + _channel->Name());
+		_client->Broadcast(_msg);
+		return;
+	}
+
+	if (flag == "+o")
+	{
+		if (_channel->CheckAdmin(*_target))
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", _target->GetNick() + " is already an operator");
+			_client->Broadcast(_msg);
+			return;
+		}
+
+		_channel->ToggleAdmin(*_client, *_target);
+	}
+	else
+	{
+		if (!_channel->CheckAdmin(*_target))
+		{
+			string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "MODE", _target->GetNick() + " is already not an operator");
+			_client->Broadcast(_msg);
+			return;
+		}
+
+		_channel->ToggleAdmin(*_client, *_target);
+	}
+}
+
+
+int Command::IsFlag(string flag)
+{
+	string flags[6] = {"+i", "-i", "+t", "-t", "-k", "-l"};
+	string ArgFlags[4] = {"+l", "+o", "-o", "+k"};
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (flag == flags[i])
+			return 1;
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		if (flag == ArgFlags[i])
+			return 2;
+	}
+
+	return 0;
 }
 
 void Command::Mode(string _data, Client *_client, Server *_server)
 {
-	(void)_data;
-	(void)_client;
-	(void)_server;
+	Channel *_channel = _server->GetChannel(&ExtractCommand(_data)[1]);
+
+	if (!_channel)
+	{
+		string _msg = ERR_NOSUCHCHANNEL(_client->GetNick(), "#" + &ExtractCommand(_data)[1]);
+		_client->Broadcast(_msg);
+		return ;
+	}
+
+	if (!_channel->CheckAdmin(*_client))
+	{
+		string _msg = ERR_CHANOPRIVSNEEDED(_client->GetNick(), "#" + &ExtractCommand(_data)[1]);
+		_client->Broadcast(_msg);
+		return ;
+	}
+
+	vector<string>cmds = SplitString(_data);
+
+	int i = 1;
+	int j = GetFirstArg(cmds);
+	int k = j;
+
+	while (i < (int)cmds.size() && IsFlag(cmds.at(i)))
+	{
+		char flag = cmds.at(i)[1];
+		string arg = "";
+
+		if (IsFlag(cmds.at(i)) == 2)
+		{
+			if (j < (int)cmds.size())
+				arg = cmds.at(j++);
+		}
+
+		cout << "[" << flag << "]: " << arg << endl;
+		switch (flag) {
+			case 'i':
+				ModeI(cmds.at(i), _channel, _client);
+				break;
+			case 't':
+				ModeT(cmds.at(i), _channel, _client);
+				break;
+			case 'k':
+				ModeK(cmds.at(i), _channel, _client, arg);
+				break;
+			case 'l':
+				ModeL(cmds.at(i), _channel, _client, arg);
+				break;
+			case 'o':
+				ModeO(cmds.at(i), _channel, _client, arg, _server);
+				break;
+			default:
+				break;
+		}
+		i++;
+	}
+
+	if (i != k)
+	{
+		string _msg = ERR_UMODEUNKNOWNFLAG(_client->GetNick());
+		_client->Broadcast(_msg);
+	}
 }
 
 void Command::Topic(string _data, Client *_client, Server *_server)
@@ -404,7 +656,7 @@ void Command::Join(string _data, Client *_client, Server *_server)
 		return;
 	}
 
-	Channel *_channel = _server->AddChannel(&_data[1]);
+	Channel *_channel = _server->AddChannel(&ExtractCommand(_data)[1]);
 
 	if (!_channel)
 	{
@@ -413,7 +665,7 @@ void Command::Join(string _data, Client *_client, Server *_server)
 		return;
 	}
 
-	_channel->JoinChannel(*_client, ExtractCommand(_data));
+	_channel->JoinChannel(*_client, ExtractArgs(_data));
 }
 
 void Command::Part(string _data, Client *_client, Server *_server)
@@ -635,8 +887,9 @@ void Command::Help(string _data, Client *_client, Server *_server)
 		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/LIST");
 		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/INVITE <nickname> <channel>");
 		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/KICK <channel> <user> [:<reason>]");
-		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/MODE <target> [<modestring> [<mode arguments>...]]");
-		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "/PRIVMSG <target> <text to be sent>");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/MODE <target> <modestring> [<mode arguments>...]");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/PRIVMSG <target> <text to be sent>");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "/METEO <location>");
 		_client->Broadcast(_msg);
 		return;
 	}
@@ -745,6 +998,15 @@ void Command::Help(string _data, Client *_client, Server *_server)
 		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
 		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /PRIVMSG command is the main way");
 		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to send a message to someone.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "METEO")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The METEO command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /METEO command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to see the current meteo in a location.");
 		_client->Broadcast(_msg);
 		return;
 	}

@@ -21,14 +21,14 @@ class Bot {
 		string pattern;
 
 	private:
-		void Connect();
 		void Loop();
+		void Connect();
+		string Receive();
 		void Send(string _msg);
 		string GetMeteo(string _msg);
-		string GetWeatherData(string _location);
-		string ParseWeatherData(string _json);
-		string Receive();
 		string CleanLocation(string _data);
+		string ParseWeatherData(string _json);
+		string GetWeatherData(string _location);
 
 	public:
 		Bot(int _port, string _address, string _password);

@@ -166,7 +166,7 @@ string Bot::Receive()
 	ssize_t _bytes = recv(fd, _buffer, sizeof(_buffer) - 1, 0);
 
 	if (_bytes <= 0)
-		throw(runtime_error("You have been disconnected from the server\r"));
+		throw(runtime_error("You have been disconnected from the server\n"));
 	else
 	{
 		_buffer[_bytes] = '\0';

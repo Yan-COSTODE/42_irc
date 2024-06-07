@@ -13,7 +13,7 @@
 - **~~LIST~~**
 - **~~INVITE~~**
 - **~~KICK~~**
-- **MODE**
+- **~~MODE~~**
 
 ## SERVER QUERIES
 - **~~HELP~~**
