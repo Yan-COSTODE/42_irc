@@ -6,7 +6,6 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		return;
 
 	string _cmd = ExtractCommand(_data);
-	string _msg = "";
 
 	cout << "\x1b[1;37m" << *_client << " Data: " << _data << "\x1b[0m" << flush;
 
@@ -46,6 +45,14 @@ void Command::Parse(string _data, Client* _client, Server* _server)
 		Mode(ExtractArgs(_data), _client, _server);
 	else if (_cmd == "TOPIC")
 		Topic(ExtractArgs(_data), _client, _server);
+	else if (_cmd == "HELP")
+		Help(ExtractArgs(_data), _client, _server);
+	else
+	{
+		string _msg = ERR_UNKNOWNERROR(_client->GetNick(), _cmd, "Command not found");
+		_client->Broadcast(_msg);
+		return;
+	}
 }
 
 vector<string> Command::SplitString(const string str)
@@ -259,13 +266,15 @@ void Command::Meteo(string _data, Client *_client, Server *_server)
 
 	if (!_bot)
 	{
-		_client->Broadcast("Meteosaurus isn't on the server\r\n");
+		string _msg = ERR_UNKNOWNERROR(_client->GetNick(), "METEO", "Meteosaurus isn't on the server");
+		_client->Broadcast(_msg);
 		return;
 	}
 
 	if (_data.empty())
 	{
-		_client->Broadcast("METEO needs an argument\r\n");
+		string _msg = ERR_NEEDMOREPARAMS(_client->GetNick(), "METEO");
+		_client->Broadcast(_msg);
 		return;
 	}
 
@@ -307,7 +316,14 @@ void Command::Invite(string _data, Client *_client, Server *_server)
 		return;
 	}
 
-	if (_dest && _channel->CheckUser(*_dest))
+	if (!_dest)
+	{
+		string _msg = ERR_NOSUCHNICK(_client->GetNick(), ExtractCommand(_data));
+		_client->Broadcast(_msg);
+		return;
+	}
+
+	if (_channel->CheckUser(*_dest))
 	{
 		string _msg = ERR_USERONCHANNEL(_client->GetNick(), _dest->GetNick(), _channelName);
 		_client->Broadcast(_msg);
@@ -316,13 +332,9 @@ void Command::Invite(string _data, Client *_client, Server *_server)
 
 	string _msg = RPL_INVITING(_client->GetNick(), ExtractCommand(_data), _channelName);
 	_client->Broadcast(_msg);
-
-	if (_dest)
-	{
-		_channel->Invite(*_dest);
-		_msg = RPL_INVITED(_client->GetNick(), _dest->GetNick(), _channelName);
-		_dest->Broadcast(_msg);
-	}
+	_channel->Invite(*_dest);
+	_msg = RPL_INVITED(_client->GetNick(), _dest->GetNick(), _channelName);
+	_dest->Broadcast(_msg);
 }
 
 void Command::Kick(string _data, Client *_client, Server *_server)
@@ -360,7 +372,14 @@ void Command::Kick(string _data, Client *_client, Server *_server)
 
 	Client *_dest =  _server->GetClient(ExtractArgs(_data));
 
-	if (_dest && !_channel->CheckUser(*_dest))
+	if (!_dest)
+	{
+		string _msg = ERR_NOSUCHNICK(_client->GetNick(), ExtractArgs(_data));
+		_client->Broadcast(_msg);
+		return;
+	}
+
+	if (!_channel->CheckUser(*_dest))
 	{
 		string _msg = ERR_USERNOTINCHANNEL(_client->GetNick(), _dest->GetNick(), _channelName);
 		_client->Broadcast(_msg);
@@ -372,7 +391,7 @@ void Command::Kick(string _data, Client *_client, Server *_server)
 
 void Command::Bot(std::string _data, Client *_client)
 {
-	string _msg = "" + _data + " isn't a valid command for a bot\r\n";
+	string _msg = _data + " isn't a valid command for a bot";
 	_client->Broadcast(_msg);
 }
 
@@ -586,4 +605,153 @@ void Command::List(string _data, Client *_client, Server *_server)
 {
 	(void)_data;
 	_client->Broadcast(_server->List(*_client));
+}
+
+void Command::Help(string _data, Client *_client, Server *_server)
+{
+	(void)_server;
+	if (_data.empty() || _data == "HELP")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** HELP System **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "Try /HELP <command> for specific help,");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "/HELP USERCMDS to list available commands");
+		_client->Broadcast(_msg);
+		return;
+	}
+
+	if (_data == "USERCMDS")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** HELP System **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/HELP [<subject>]");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/NICK <nickname>");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/PING <token>");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/QUIT [<reason>]");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/JOIN <channel> [<key>]");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/PART <channel> [<reason>]");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/TOPIC <channel> [<topic>]");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/NAMES <channel>");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/LIST");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/INVITE <nickname> <channel>");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/KICK <channel> <user> [:<reason>]");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "/MODE <target> [<modestring> [<mode arguments>...]]");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "/PRIVMSG <target> <text to be sent>");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "NICK")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The NICK command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /NICK command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to change your nickname on the server.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "PING")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The PING command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /PING command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to check your latency with the server.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "QUIT")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The QUIT command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /QUIT command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to disconnect from the server.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "JOIN")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The JOIN command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /JOIN command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to join a channel in the server.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "PART")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The PART command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /PART command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to quit a channel in the server.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "TOPIC")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The TOPIC command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /TOPIC command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to see or change the topic in a channel.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "NAMES")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The NAMES command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /NAMES command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to see all members of a channel.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "LIST")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The LIST command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /LIST command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to see all channel in the server.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "INVITE")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The INVITE command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /INVITE command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to invite someone in a channel.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "KICK")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The KICK command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /KICK command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to kick someone from a channel.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "MODE")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The MODE command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /MODE command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to change a channel configuration.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else if (_data == "PRIVMSG")
+	{
+		string _msg = RPL_HELPSTART(_client->GetNick(), "*", "** The PRIVMSG command **");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "");
+		_msg += RPL_HELPTXT(_client->GetNick(), "*", "The /PRIVMSG command is the main way");
+		_msg += RPL_ENDOFHELP(_client->GetNick(), "*", "to send a message to someone.");
+		_client->Broadcast(_msg);
+		return;
+	}
+	else
+	{
+		string _msg = ERR_HELPNOTFOUND(_client->GetNick(), "*");
+		_client->Broadcast(_msg);
+		return;
+	}
 }

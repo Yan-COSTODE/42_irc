@@ -16,7 +16,7 @@
 - **MODE**
 
 ## SERVER QUERIES
-- **HELP**
+- **~~HELP~~**
 
 ## MESSAGE
 - **~~PRIVMSG~~**

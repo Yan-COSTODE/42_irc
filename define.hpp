@@ -20,6 +20,9 @@
 #define RPL_PART(client, channel, reason) ":" + client + " PART " + channel + " :" + reason;
 #define RPL_NICK(client, nick) ":" + client + " NICK " + nick;
 #define RPL_PONG(token) ":localhost PONG localhost " + token;
+#define RPL_HELPSTART(client, subject, line) RPL("704") + client + " " + subject + " :" + line
+#define RPL_HELPTXT(client, subject, line) RPL("705") + client + " " + subject + " :" + line
+#define RPL_ENDOFHELP(client, subject, line) RPL("706") + client + " " + subject + " :" + line
 
 #define ERR_NEEDMOREPARAMS(client, command) RPL("461") + client + " " + command + " :Not enough parameters"
 #define ERR_NOSUCHCHANNEL(client, channel) RPL("403") + client + " " + channel + " :Not such channel"
@@ -39,5 +42,7 @@
 #define ERR_NORECIPIENT(client, command) RPL("411") + client + " :No recipient given (" + command + ")"
 #define ERR_CANNOTSENDTOCHAN(client, channel) RPL("404") + client + " " + channel + " :Cannot send to channel"
 #define ERR_NOTEXTTOSEND(client) RPL("412") + client + " :No text to send"
+#define ERR_UNKNOWNERROR(client, command, info) RPL("400") + client + " " + command + " :" + info
+#define ERR_HELPNOTFOUND(client, subject) RPL("524") + client + " " + subject + " :No help available on this topic"
 
 #endif

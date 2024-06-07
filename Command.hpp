@@ -22,6 +22,7 @@ class Command {
 		static void Topic(string _data, Client *_client, Server *_server);
 		static void Ping(string _data, Client *_client, Server *_server);
 		static void Meteo(string _data, Client *_client, Server *_server);
+		static void Help(string _data, Client *_client, Server *_server);
 		static void Bot(string _data, Client* _client);
 		static vector<string> SplitString(const string str);
 		static string ExtractCommand(string _data);
