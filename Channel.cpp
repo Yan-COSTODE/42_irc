@@ -187,12 +187,6 @@ void Channel::ToggleAdmin(Client _admin, Client _client)
 		return;
 	}
 
-	if (_admin == _client)
-	{
-		_admin.Broadcast("\x1b[1;31mYou can't change your own operator mode\n\x1b[0m");
-		return;
-	}
-
 	if (CheckAdmin(_client))
 	{
 		RemoveAdmin(_client);
@@ -280,6 +274,7 @@ void Channel::Broadcast(string _msg)
 		user[i].Broadcast(_msg);
 }
 
+<<<<<<< Updated upstream
 string Channel::Who()
 {
 	string _msg = "\x1b[1;37m--- " + name + " ---\n";
@@ -330,4 +325,17 @@ ostream& operator<<(ostream& _os, const Channel& _channel)
 	_output += ">";
 	_os << _output;
 	return _os;
+=======
+void Channel::setTopic(std::string _topic)
+{
+	string msg;
+	if (_topic != topic)
+	{
+		topic = _topic;
+		msg = "The topic of #" + name + "has been changed to " + _topic;
+	}
+	else
+		msg = "The topic is already set to " + topic;
+	Broadcast(msg);
+>>>>>>> Stashed changes
 }

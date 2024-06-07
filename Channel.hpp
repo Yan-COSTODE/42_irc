@@ -26,9 +26,14 @@ class Channel {
 		vector<Client> invited;
 
 	private:
+<<<<<<< Updated upstream
 		void RemoveAdmin(Client _client);
 		void RemoveUser(Client _client);
 		void RemoveInvited(Client _client);
+=======
+		bool CheckAdmin(Client _client);
+		void setTopic(std::string _topic);
+>>>>>>> Stashed changes
 
 public:
 		Channel();

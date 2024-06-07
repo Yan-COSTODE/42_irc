@@ -62,6 +62,7 @@ void Command::Mode(string _data, Client *_client, Server *_server)
 	(void)_data;
 	(void)_client;
 	(void)_server;
+<<<<<<< Updated upstream
 }
 
 void Command::Topic(string _data, Client *_client, Server *_server)
@@ -415,4 +416,54 @@ string Command::ExtractMsg(string _data)
 		return "";
 
 	return _data.substr(_firstNoSpaceEnd, _data.size() - _firstNoSpaceEnd) + "\n";
+=======
+	cout << "\x1b[1;37mClient <" << _client->Nickname() << "> Data: " << _data << "\x1b[0m" << flush;
+}
+
+string Command::getModeFlag(std::string cmd)
+{
+	size_t pos = cmd.find('-') < cmd.find('+') ? cmd.find('-') : cmd.find('+');
+	std::string res = "";
+
+	while (cmd[pos] != ' ')
+	{
+		res += cmd[pos];
+		pos++;
+	}
+	return res;
+}
+
+string Command::getArgs(string cmd)
+{
+	string arg = "";
+	int i = 0;
+	while ()
+}
+
+void Command::Mode(string cmd, Client *_client, Channel *channel)
+{
+	int flagCase = 0;
+	while (getModeFlag(cmd) != "")
+	{
+		switch (getModeFlag(cmd)) {
+			case "i":
+
+			case "t":
+				cwce
+			case "k":
+				cewce
+			case "o":
+				cwq
+			case "l":
+				cewce
+			default:
+				std::cout << "Flag -" << getModeFlag(cmd) << " doesn't exist";
+			break;
+		}
+		removeFirstFlag(cmd);
+
+	}
+
+
+>>>>>>> Stashed changes
 }

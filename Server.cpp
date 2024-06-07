@@ -121,8 +121,15 @@ void Server::ReceiveNewData(int _fd)
 void Server::CloseFds()
 {
 	for(size_t i = 0; i < clients.size(); i++)
+<<<<<<< Updated upstream
 		RemoveClient(clients[i], true);
 
+=======
+	{
+		cout << "\x1b[1;31mClient <" << clients[i].GetFd() << "> Disconnected\x1b[0m" << endl;
+		close(clients[i].GetFd());
+	}
+>>>>>>> Stashed changes
 	if (serverSocket != -1)
 	{
 		cout <<"\x1b[1;31mServer <" << serverSocket << "> Disconnected\x1b[0m" << endl;

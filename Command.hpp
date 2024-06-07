@@ -7,6 +7,7 @@
 class Command {
 	public:
 		static void Parse(string _data, Client* _client, Server* _server);
+<<<<<<< Updated upstream
 		static void NotFound(string _data, Client* _client);
 		static void Who(string _data, Client* _client, Server* _server);
 		static void Join(string _data, Client* _client, Server* _server);
@@ -24,6 +25,10 @@ class Command {
 		static string ExtractCommand(string _data);
 		static string ExtractArgs(string _data);
 		static string ExtractMsg(string _data);
+=======
+		std::string getModeFlag(std::string cmd);
+		void Mode(std::string cmd, Client _client);
+>>>>>>> Stashed changes
 };
 
 #endif
